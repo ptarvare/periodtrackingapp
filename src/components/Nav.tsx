@@ -31,6 +31,9 @@ export default function Nav() {
           <NavLink href="/dashboard" active={pathname === "/dashboard"}>
             Dashboard
           </NavLink>
+          <NavLink href="/profile" active={pathname === "/profile"}>
+            Edit Profile
+          </NavLink>
         </nav>
 
         <div className="flex items-center gap-3">
