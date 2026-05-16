@@ -4,8 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
     User,
     onAuthStateChanged,
-    signInWithRedirect,
-    getRedirectResult,
+    signInWithPopup,
     GoogleAuthProvider,
     setPersistence,
     browserLocalPersistence,
@@ -16,7 +15,7 @@ import { auth } from "@/lib/firebase";
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    googleSignIn: () => Promise<void>;
+    googleSignIn: () => Promise<"ok" | "popup-blocked">;
     logout: () => Promise<void>;
 }
 
@@ -26,11 +25,22 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const googleSignIn = async () => {
+    const googleSignIn = async (): Promise<"ok" | "popup-blocked"> => {
         const provider = new GoogleAuthProvider();
-        // Local persistence prevents Safari ITP from clearing state mid-redirect
         await setPersistence(auth, browserLocalPersistence);
-        await signInWithRedirect(auth, provider);
+        try {
+            await signInWithPopup(auth, provider);
+            return "ok";
+        } catch (error: any) {
+            if (
+                error.code === "auth/popup-blocked" ||
+                error.code === "auth/popup-closed-by-user"
+            ) {
+                return "popup-blocked";
+            }
+            console.error("Sign-in error:", error.code);
+            return "ok";
+        }
     };
 
     const logout = async () => {
@@ -42,11 +52,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        // Pick up the result after Google redirects back to the app
-        getRedirectResult(auth).catch(() => {
-            // No redirect in progress — safe to ignore
-        });
-
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);

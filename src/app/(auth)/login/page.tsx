@@ -6,11 +6,15 @@ import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 
+type Screen = "login" | "blocked";
+
 export default function LoginPage() {
     const { user, googleSignIn } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [screen, setScreen] = useState<Screen>("login");
 
+    // Redirect once signed in
     useEffect(() => {
         if (!user) return;
         (async () => {
@@ -29,12 +33,11 @@ export default function LoginPage() {
 
     const handleSignIn = async () => {
         setLoading(true);
-        try {
-            await googleSignIn();
-            // Page will redirect to Google — loading stays true
-        } catch {
-            setLoading(false);
+        const result = await googleSignIn();
+        if (result === "popup-blocked") {
+            setScreen("blocked");
         }
+        setLoading(false);
     };
 
     return (
@@ -50,39 +53,64 @@ export default function LoginPage() {
                     <p className="text-gray-400 text-sm mt-2">Your holistic cycle companion</p>
                 </div>
 
-                {/* Card */}
                 <div className="bg-white rounded-3xl shadow-xl border border-pink-100 p-8 space-y-5">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Welcome 👋</h2>
-                        <p className="text-sm text-gray-400 mt-1 leading-relaxed">
-                            Sign in with your Google account to get personalised cycle insights.
-                        </p>
-                    </div>
 
-                    <button
-                        onClick={handleSignIn}
-                        disabled={loading}
-                        className="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-pink-200 hover:bg-pink-50/30 disabled:opacity-60 transition-all shadow-sm font-semibold text-gray-700"
-                    >
-                        {loading ? (
-                            <>
-                                <span className="w-5 h-5 border-2 border-gray-300 border-t-pink-500 rounded-full animate-spin" />
-                                <span>Redirecting to Google…</span>
-                            </>
-                        ) : (
-                            <>
-                                <GoogleIcon />
-                                <span>Continue with Google</span>
-                            </>
-                        )}
-                    </button>
+                    {screen === "login" && (
+                        <>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Welcome 👋</h2>
+                                <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                                    Sign in with Google — no password needed.
+                                </p>
+                            </div>
 
-                    <p className="text-xs text-gray-400 text-center leading-relaxed">
-                        No password needed — just tap and you&apos;re in.
-                    </p>
+                            <button
+                                onClick={handleSignIn}
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-pink-200 hover:bg-pink-50/30 disabled:opacity-60 transition-all shadow-sm font-semibold text-gray-700"
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="w-5 h-5 border-2 border-gray-300 border-t-pink-500 rounded-full animate-spin" />
+                                        <span>Opening Google…</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <GoogleIcon />
+                                        <span>Continue with Google</span>
+                                    </>
+                                )}
+                            </button>
+
+                            <p className="text-xs text-gray-400 text-center">
+                                Works best in Safari on iPhone.
+                            </p>
+                        </>
+                    )}
+
+                    {screen === "blocked" && (
+                        <div className="text-center space-y-4">
+                            <div className="text-4xl">🌐</div>
+                            <h2 className="text-lg font-bold text-gray-900">Open in Safari</h2>
+                            <p className="text-sm text-gray-500 leading-relaxed">
+                                Chrome on iPhone blocks sign-in popups. To sign in:
+                            </p>
+                            <ol className="text-sm text-gray-600 text-left space-y-2 bg-pink-50 rounded-2xl p-4">
+                                <li className="flex gap-2"><span className="text-pink-400 font-bold">1.</span> Tap the <span className="font-semibold">share icon</span> (□↑) at the bottom of Chrome</li>
+                                <li className="flex gap-2"><span className="text-pink-400 font-bold">2.</span> Tap <span className="font-semibold">&ldquo;Open in Safari&rdquo;</span></li>
+                                <li className="flex gap-2"><span className="text-pink-400 font-bold">3.</span> Sign in there — it works perfectly</li>
+                            </ol>
+                            <button
+                                onClick={() => { setScreen("login"); }}
+                                className="text-sm text-pink-500 underline underline-offset-2"
+                            >
+                                Try again
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed px-4">
+                <p className="text-center text-xs text-gray-400 mt-6 px-4">
                     Luna is a wellness tool, not a medical device.
                 </p>
             </div>
