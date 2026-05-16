@@ -27,7 +27,7 @@ export default function DashboardPage() {
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
 
-        if (!snap.exists() || !snap.data().onboardingCompleted) {
+        if (!snap.exists() || !snap.data().onboardingCompleted || !snap.data().profile?.periodDates?.length) {
           router.push("/onboarding");
           return;
         }
