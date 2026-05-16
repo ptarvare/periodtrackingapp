@@ -1,27 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
-import { auth } from "@/lib/firebase";
 import { db } from "@/lib/firebase";
 
-type Screen = "input" | "sent" | "confirm" | "signingIn";
-
 export default function LoginPage() {
-    const { user, sendMagicLink } = useAuth();
+    const { user, googleSignIn } = useAuth();
     const router = useRouter();
-
-    const [screen, setScreen] = useState<Screen>("input");
-    const [email, setEmail] = useState("");
-    const [confirmEmail, setConfirmEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [sentTo, setSentTo] = useState("");
 
-    // Redirect once signed in
     useEffect(() => {
         if (!user) return;
         (async () => {
@@ -38,62 +27,12 @@ export default function LoginPage() {
         })();
     }, [user, router]);
 
-    // Detect magic link on page load
-    useEffect(() => {
-        if (!isSignInWithEmailLink(auth, window.location.href)) return;
-
-        const saved = localStorage.getItem("lunaEmailForSignIn");
-        if (saved) {
-            // Same browser — complete silently
-            setScreen("signingIn");
-            signInWithEmailLink(auth, saved, window.location.href)
-                .then(() => localStorage.removeItem("lunaEmailForSignIn"))
-                .catch(() => {
-                    setError("The link has expired or already been used. Please request a new one.");
-                    setScreen("input");
-                });
-        } else {
-            // Different browser/device — ask for email
-            setScreen("confirm");
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        const trimmed = email.trim().toLowerCase();
-        if (!trimmed || !trimmed.includes("@")) {
-            setError("Please enter a valid email address.");
-            return;
-        }
+    const handleSignIn = async () => {
         setLoading(true);
         try {
-            await sendMagicLink(trimmed);
-            setSentTo(trimmed);
-            setScreen("sent");
+            await googleSignIn();
+            // Page will redirect to Google — loading stays true
         } catch {
-            setError("Something went wrong. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleConfirm = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        const trimmed = confirmEmail.trim().toLowerCase();
-        if (!trimmed || !trimmed.includes("@")) {
-            setError("Please enter the email address you used.");
-            return;
-        }
-        setLoading(true);
-        try {
-            await signInWithEmailLink(auth, trimmed, window.location.href);
-            localStorage.removeItem("lunaEmailForSignIn");
-        } catch {
-            setError("That email doesn't match the link. Please check and try again.");
-        } finally {
             setLoading(false);
         }
     };
@@ -103,97 +42,44 @@ export default function LoginPage() {
             <div className="w-full max-w-sm">
 
                 {/* Brand */}
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-3">🌙</div>
-                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 tracking-tight">
+                <div className="text-center mb-10">
+                    <div className="text-6xl mb-4">🌙</div>
+                    <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 tracking-tight">
                         Luna
                     </h1>
-                    <p className="text-gray-400 text-sm mt-1">Your holistic cycle companion</p>
+                    <p className="text-gray-400 text-sm mt-2">Your holistic cycle companion</p>
                 </div>
 
-                <div className="bg-white rounded-3xl shadow-xl border border-pink-100 p-8">
+                {/* Card */}
+                <div className="bg-white rounded-3xl shadow-xl border border-pink-100 p-8 space-y-5">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Welcome 👋</h2>
+                        <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                            Sign in with your Google account to get personalised cycle insights.
+                        </p>
+                    </div>
 
-                    {/* Default — enter email */}
-                    {screen === "input" && (
-                        <>
-                            <h2 className="text-xl font-bold text-gray-900 mb-1">Welcome 👋</h2>
-                            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                                Enter your email and we&apos;ll send you a sign-in link. No password needed.
-                            </p>
-                            <form onSubmit={handleSend} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
-                                    <input
-                                        type="email" value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="you@example.com"
-                                        autoComplete="email" autoFocus
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all text-sm"
-                                    />
-                                    {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
-                                </div>
-                                <button type="submit" disabled={loading}
-                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold shadow-lg shadow-pink-200 hover:opacity-95 disabled:opacity-60 transition-all">
-                                    {loading ? "Sending…" : "Send magic link ✨"}
-                                </button>
-                            </form>
-                        </>
-                    )}
+                    <button
+                        onClick={handleSignIn}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-gray-100 rounded-2xl hover:border-pink-200 hover:bg-pink-50/30 disabled:opacity-60 transition-all shadow-sm font-semibold text-gray-700"
+                    >
+                        {loading ? (
+                            <>
+                                <span className="w-5 h-5 border-2 border-gray-300 border-t-pink-500 rounded-full animate-spin" />
+                                <span>Redirecting to Google…</span>
+                            </>
+                        ) : (
+                            <>
+                                <GoogleIcon />
+                                <span>Continue with Google</span>
+                            </>
+                        )}
+                    </button>
 
-                    {/* Email sent */}
-                    {screen === "sent" && (
-                        <div className="text-center py-2">
-                            <div className="text-5xl mb-4">📬</div>
-                            <h2 className="text-xl font-bold text-gray-900 mb-2">Check your inbox!</h2>
-                            <p className="text-sm text-gray-500 leading-relaxed mb-2">
-                                We sent a sign-in link to{" "}
-                                <span className="font-semibold text-pink-600">{sentTo}</span>
-                            </p>
-                            <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                                Tap the link in the email — it works on any browser.{" "}
-                                <span className="font-medium text-amber-500">If you don&apos;t see it, check your spam folder.</span>
-                            </p>
-                            <button onClick={() => { setScreen("input"); setEmail(""); }}
-                                className="text-sm text-gray-400 hover:text-pink-500 transition-colors underline underline-offset-2">
-                                Use a different email
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Confirm email (opened in different browser) */}
-                    {screen === "confirm" && (
-                        <>
-                            <h2 className="text-xl font-bold text-gray-900 mb-1">Almost there! 🎉</h2>
-                            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                                Just type the email address you used to request the link to confirm it&apos;s you.
-                            </p>
-                            <form onSubmit={handleConfirm} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm your email</label>
-                                    <input
-                                        type="email" value={confirmEmail}
-                                        onChange={(e) => setConfirmEmail(e.target.value)}
-                                        placeholder="you@example.com"
-                                        autoComplete="email" autoFocus
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all text-sm"
-                                    />
-                                    {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
-                                </div>
-                                <button type="submit" disabled={loading}
-                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold shadow-lg shadow-pink-200 hover:opacity-95 disabled:opacity-60 transition-all">
-                                    {loading ? "Signing in…" : "Confirm & sign in →"}
-                                </button>
-                            </form>
-                        </>
-                    )}
-
-                    {/* Signing in silently */}
-                    {screen === "signingIn" && (
-                        <div className="text-center py-6">
-                            <div className="text-4xl mb-4">🌙</div>
-                            <p className="text-sm font-medium text-gray-600">Signing you in…</p>
-                        </div>
-                    )}
+                    <p className="text-xs text-gray-400 text-center leading-relaxed">
+                        No password needed — just tap and you&apos;re in.
+                    </p>
                 </div>
 
                 <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed px-4">
@@ -201,5 +87,16 @@ export default function LoginPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+function GoogleIcon() {
+    return (
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+        </svg>
     );
 }

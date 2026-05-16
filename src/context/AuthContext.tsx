@@ -4,22 +4,19 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
     User,
     onAuthStateChanged,
-    sendSignInLinkToEmail,
-    isSignInWithEmailLink,
-    signInWithEmailLink,
+    signInWithRedirect,
+    getRedirectResult,
+    GoogleAuthProvider,
+    setPersistence,
+    browserLocalPersistence,
     signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-const ACTION_CODE_SETTINGS = {
-    url: "https://luna-app-beta.vercel.app/login",
-    handleCodeInApp: true,
-};
-
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    sendMagicLink: (email: string) => Promise<void>;
+    googleSignIn: () => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -29,9 +26,11 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const sendMagicLink = async (email: string) => {
-        await sendSignInLinkToEmail(auth, email, ACTION_CODE_SETTINGS);
-        localStorage.setItem("lunaEmailForSignIn", email);
+    const googleSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        // Local persistence prevents Safari ITP from clearing state mid-redirect
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithRedirect(auth, provider);
     };
 
     const logout = async () => {
@@ -43,15 +42,10 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        // Complete sign-in if this page was opened via a magic link
-        if (isSignInWithEmailLink(auth, window.location.href)) {
-            const email = localStorage.getItem("lunaEmailForSignIn");
-            if (email) {
-                signInWithEmailLink(auth, email, window.location.href)
-                    .then(() => localStorage.removeItem("lunaEmailForSignIn"))
-                    .catch((err) => console.error("Magic link sign-in error:", err));
-            }
-        }
+        // Pick up the result after Google redirects back to the app
+        getRedirectResult(auth).catch(() => {
+            // No redirect in progress — safe to ignore
+        });
 
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -61,7 +55,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading, sendMagicLink, logout }}>
+        <AuthContext.Provider value={{ user, loading, googleSignIn, logout }}>
             {children}
         </AuthContext.Provider>
     );
