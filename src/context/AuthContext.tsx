@@ -4,8 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
     User,
     onAuthStateChanged,
-    signInWithRedirect,
-    getRedirectResult,
+    signInWithPopup,
     GoogleAuthProvider,
     signOut
 } from "firebase/auth";
@@ -27,12 +26,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const googleSignIn = async () => {
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithRedirect(auth, provider);
+            await signInWithPopup(auth, provider);
         } catch (error: any) {
-            console.error("Error initiating redirect sign-in", error);
-            if (error.code === 'auth/configuration-not-found') {
-                alert("Firebase Auth is not enabled in the console.");
-            }
+            console.error("Google sign-in error", error);
         }
     };
 
@@ -45,14 +41,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        // Handle redirect result
-        getRedirectResult(auth).catch((error) => {
-            console.error("Error getting redirect result", error);
-            if (error.code === 'auth/configuration-not-found') {
-                alert("Firebase Auth is not enabled in the console.");
-            }
-        });
-
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
