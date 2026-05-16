@@ -87,7 +87,7 @@ export default function ProfilePage() {
 
     return (
         <PleaseSignIn>
-            <div className="min-h-screen bg-gray-50 pb-12">
+            <div className="min-h-screen bg-[#FDF2F8] pb-24 sm:pb-12">
                 <Nav />
                 {loading ? (
                     <div className="max-w-lg mx-auto px-4 pt-10 space-y-4 animate-pulse">

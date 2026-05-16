@@ -9,76 +9,75 @@ export default function Nav() {
   const pathname = usePathname();
 
   const initials = user?.displayName
-    ? user.displayName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+    ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
   return (
-    <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-      <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link
-          href="/dashboard"
-          className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-600 to-purple-600"
-        >
-          Luna
-        </Link>
+    <>
+      {/* ── Top bar ── */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-pink-100 sticky top-0 z-50">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/dashboard" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-500">
+            Luna 🌙
+          </Link>
 
-        <nav className="flex items-center gap-1">
-          <NavLink href="/dashboard" active={pathname === "/dashboard"}>
-            Dashboard
-          </NavLink>
-          <NavLink href="/profile" active={pathname === "/profile"}>
-            Edit Profile
-          </NavLink>
-        </nav>
+          {/* Desktop nav links */}
+          <nav className="hidden sm:flex items-center gap-1">
+            <NavLink href="/dashboard" active={pathname === "/dashboard"}>🏠 Home</NavLink>
+            <NavLink href="/profile" active={pathname === "/profile"}>✏️ Edit Profile</NavLink>
+          </nav>
 
-        <div className="flex items-center gap-3">
-          {user?.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt={user.displayName || "avatar"}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-100"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-              {initials}
-            </div>
-          )}
-          <button
-            onClick={logout}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Sign out
+          {/* Avatar + sign out */}
+          <div className="flex items-center gap-2.5">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-200" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                {initials}
+              </div>
+            )}
+            <button onClick={logout} className="hidden sm:block text-xs text-gray-400 hover:text-pink-500 transition-colors font-medium">
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Mobile bottom tab bar ── */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-pink-100 z-50 sm:hidden">
+        <div className="flex items-center justify-around h-16 px-6">
+          <BottomTab href="/dashboard" active={pathname === "/dashboard"} emoji="🏠" label="Home" />
+          <BottomTab href="/profile" active={pathname === "/profile"} emoji="✏️" label="Profile" />
+          <button onClick={logout} className="flex flex-col items-center gap-0.5 py-2 px-4">
+            <span className="text-xl">👋</span>
+            <span className="text-xs text-gray-400 font-medium">Sign out</span>
           </button>
         </div>
-      </div>
-    </header>
+      </nav>
+    </>
   );
 }
 
-function NavLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
+function NavLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-        active
-          ? "bg-pink-50 text-pink-700"
-          : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-      }`}
-    >
+    <Link href={href} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+      active
+        ? "bg-pink-50 text-pink-600 font-semibold"
+        : "text-gray-500 hover:text-pink-500 hover:bg-pink-50/50"
+    }`}>
       {children}
+    </Link>
+  );
+}
+
+function BottomTab({ href, active, emoji, label }: { href: string; active: boolean; emoji: string; label: string }) {
+  return (
+    <Link href={href} className="flex flex-col items-center gap-0.5 py-2 px-4">
+      <span className={`text-xl transition-transform ${active ? "scale-110" : "opacity-60"}`}>{emoji}</span>
+      <span className={`text-xs font-medium transition-colors ${active ? "text-pink-600" : "text-gray-400"}`}>
+        {label}
+      </span>
     </Link>
   );
 }

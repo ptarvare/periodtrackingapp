@@ -5,8 +5,12 @@ import {
     User,
     onAuthStateChanged,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
-    signOut
+    setPersistence,
+    browserLocalPersistence,
+    signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -26,9 +30,24 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const googleSignIn = async () => {
         const provider = new GoogleAuthProvider();
         try {
+            // Use local persistence so mobile browsers don't lose state
+            await setPersistence(auth, browserLocalPersistence);
             await signInWithPopup(auth, provider);
         } catch (error: any) {
-            console.error("Google sign-in error", error);
+            // Popup blocked (common on mobile) — fall back to redirect
+            if (
+                error.code === "auth/popup-blocked" ||
+                error.code === "auth/popup-closed-by-user"
+            ) {
+                try {
+                    await setPersistence(auth, browserLocalPersistence);
+                    await signInWithRedirect(auth, provider);
+                } catch (redirectErr) {
+                    console.error("Redirect sign-in error:", redirectErr);
+                }
+            } else {
+                console.error("Sign-in error:", error);
+            }
         }
     };
 
@@ -36,11 +55,16 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
         try {
             await signOut(auth);
         } catch (error) {
-            console.error("Error signing out", error);
+            console.error("Sign-out error:", error);
         }
     };
 
     useEffect(() => {
+        // Handle result if the user was redirected back (mobile fallback)
+        getRedirectResult(auth).catch(() => {
+            // Silently ignore — no redirect was in progress
+        });
+
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
@@ -57,8 +81,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthContextProvider");
-    }
+    if (!context) throw new Error("useAuth must be used within AuthContextProvider");
     return context;
 };

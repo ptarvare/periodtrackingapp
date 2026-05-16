@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   return (
     <PleaseSignIn>
-      <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="min-h-screen bg-[#FDF2F8] pb-24 sm:pb-12">
         <Nav />
 
         {loading ? (

@@ -1,70 +1,78 @@
+"use client";
+
+import { useState } from "react";
 import { DailyRecommendation } from "@/lib/recommendationEngine";
 
-export default function DailyRecs({
-  recs,
-}: {
-  recs: DailyRecommendation;
-}) {
+const TABS = [
+  { key: "diet",       label: "Food",       emoji: "🥗" },
+  { key: "workout",    label: "Exercise",   emoji: "💪" },
+  { key: "supplements",label: "Supplements",emoji: "💊" },
+  { key: "lifestyle",  label: "Lifestyle",  emoji: "🌿" },
+] as const;
+
+type TabKey = typeof TABS[number]["key"];
+
+export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
+  const [active, setActive] = useState<TabKey>("diet");
+
+  const items = recs[active] ?? [];
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-6 pt-6 pb-4 border-b border-gray-50">
-        <h3 className="text-base font-semibold text-gray-800">
-          Today&apos;s Recommendations
-        </h3>
-        <p className="text-xs text-gray-400 mt-0.5">
-          Personalised for your current phase and goals
-        </p>
+    <div className="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-5 pt-5 pb-3">
+        <h3 className="text-base font-bold text-gray-900">Today&apos;s Guide</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Personalised for your current phase</p>
       </div>
 
-      <div className="divide-y divide-gray-50">
-        <Section icon="🥗" title="Nutrition" items={recs.diet} />
-        <Section icon="💪" title="Movement" items={recs.workout} />
-        <Section icon="💊" title="Supplements" items={recs.supplements} disclaimer />
-        <Section icon="🧘" title="Lifestyle" items={recs.lifestyle} />
+      {/* Tab bar */}
+      <div className="flex border-b border-pink-50 px-4 gap-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActive(tab.key)}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+              active === tab.key
+                ? "border-pink-500 text-pink-600"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <span className="text-lg">{tab.emoji}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {recs.pcosTip && (
-        <div className="mx-6 mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
-            💡 PCOS Focus
+      {/* Content */}
+      <div className="px-5 py-4">
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">No suggestions for this tab.</p>
+        ) : (
+          <ul className="space-y-3">
+            {items.map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="mt-0.5 w-5 h-5 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-xs font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {active === "supplements" && items.length > 0 && (
+          <p className="text-xs text-gray-400 mt-4 italic">
+            * Not medical advice. Consult your doctor before starting any supplement.
           </p>
+        )}
+      </div>
+
+      {/* PCOS tip */}
+      {recs.pcosTip && (
+        <div className="mx-4 mb-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">💡 PCOS Tip</p>
           <p className="text-sm text-blue-800">{recs.pcosTip}</p>
         </div>
-      )}
-    </div>
-  );
-}
-
-function Section({
-  icon,
-  title,
-  items,
-  disclaimer,
-}: {
-  icon: string;
-  title: string;
-  items: string[];
-  disclaimer?: boolean;
-}) {
-  if (!items.length) return null;
-
-  return (
-    <div className="px-6 py-4">
-      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-        {icon} {title}
-      </h4>
-      <ul className="space-y-2">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-            <span className="text-pink-400 mt-0.5 shrink-0">•</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-      {disclaimer && (
-        <p className="text-xs text-gray-400 mt-3 italic">
-          * Not medical advice. Consult your doctor before starting supplements.
-        </p>
       )}
     </div>
   );

@@ -3,113 +3,102 @@ import { format } from "date-fns";
 
 const PHASE_CONFIG = {
   Menstrual: {
-    color: "bg-red-50 text-red-700 border-red-200",
-    bar: "bg-red-400",
-    badge: "bg-red-100 text-red-600",
+    gradient: "from-rose-400 to-pink-500",
+    softBg: "bg-rose-50 border-rose-100",
+    badge: "bg-rose-100 text-rose-600",
     emoji: "🩸",
-    tagline: "Rest and restore",
+    tagline: "Rest, restore & be gentle with yourself",
+    tip: "Your body is working hard. Honour it.",
   },
   Follicular: {
-    color: "bg-pink-50 text-pink-700 border-pink-200",
-    bar: "bg-pink-400",
+    gradient: "from-pink-400 to-fuchsia-500",
+    softBg: "bg-pink-50 border-pink-100",
     badge: "bg-pink-100 text-pink-600",
-    emoji: "🌱",
-    tagline: "Energy is building",
+    emoji: "🌸",
+    tagline: "Energy is rising — fresh starts ahead",
+    tip: "Great time to start new things and feel yourself.",
   },
   Ovulatory: {
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    bar: "bg-purple-400",
+    gradient: "from-purple-500 to-violet-600",
+    softBg: "bg-purple-50 border-purple-100",
     badge: "bg-purple-100 text-purple-600",
-    emoji: "🔥",
-    tagline: "Peak power — use it",
+    emoji: "✨",
+    tagline: "Peak power — you're magnetic right now",
+    tip: "You're at your strongest. Make the most of it!",
   },
   Luteal: {
-    color: "bg-amber-50 text-amber-700 border-amber-200",
-    bar: "bg-amber-400",
-    badge: "bg-amber-100 text-amber-600",
+    gradient: "from-amber-400 to-orange-500",
+    softBg: "bg-amber-50 border-amber-100",
+    badge: "bg-amber-100 text-amber-700",
     emoji: "🌙",
-    tagline: "Wind down and reflect",
+    tagline: "Wind down, reflect & nourish deeply",
+    tip: "Slow down. Self-care is your superpower now.",
   },
 };
 
 export default function PhaseCard({ status }: { status: CycleStatus }) {
-  const { currentPhase, dayOfCycle, cycleLength, daysUntilNextPeriod, isPeriodDue, confidenceScore, ovulationDate } =
-    status;
+  const { currentPhase, dayOfCycle, cycleLength, phaseDay, ovulationDate } = status;
   const cfg = PHASE_CONFIG[currentPhase];
-  const progress = Math.min(100, Math.round((dayOfCycle / cycleLength) * 100));
 
   return (
-    <div className={`p-6 rounded-3xl border ${cfg.color} transition-all`}>
-      {/* Top row */}
-      <div className="flex justify-between items-start">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-widest opacity-60">
-            Current Phase
-          </span>
-          <h2 className="text-3xl font-bold mt-1 flex items-center gap-2">
-            {cfg.emoji} {currentPhase}
-          </h2>
-          <p className="text-sm opacity-75 mt-1">{cfg.tagline}</p>
+    <div className={`rounded-3xl overflow-hidden shadow-lg`}>
+      {/* Gradient header */}
+      <div className={`bg-gradient-to-br ${cfg.gradient} p-6 text-white`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
+              Current Phase
+            </p>
+            <div className="flex items-center gap-3">
+              <span className="text-5xl">{cfg.emoji}</span>
+              <div>
+                <h2 className="text-3xl font-bold leading-tight">{currentPhase}</h2>
+                <p className="text-white/80 text-sm mt-0.5">{cfg.tagline}</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-right shrink-0 ml-4">
+            <p className="text-xs font-semibold text-white/70 uppercase tracking-widest">Cycle Day</p>
+            <p className="text-5xl font-bold leading-tight">{dayOfCycle}</p>
+            <p className="text-white/60 text-xs">of {cycleLength}</p>
+          </div>
         </div>
 
-        <div className="text-right">
-          <span className="text-xs font-semibold uppercase tracking-widest opacity-60">
-            Cycle Day
-          </span>
-          <div className="text-4xl font-bold mt-1">{dayOfCycle}</div>
-          <div className="text-xs opacity-60 mt-0.5">of {cycleLength}</div>
-        </div>
-      </div>
-
-      {/* Cycle progress bar */}
-      <div className="mt-5">
-        <div className="w-full bg-black/8 h-2 rounded-full overflow-hidden">
+        {/* Progress bar */}
+        <div className="mt-5 w-full bg-white/20 h-2.5 rounded-full overflow-hidden">
           <div
-            className={`${cfg.bar} h-2 rounded-full transition-all duration-700`}
-            style={{ width: `${progress}%` }}
+            className="bg-white h-2.5 rounded-full transition-all duration-700"
+            style={{ width: `${Math.min(100, Math.round((dayOfCycle / cycleLength) * 100))}%` }}
           />
         </div>
-        <div className="flex justify-between text-xs opacity-50 mt-1">
+        <div className="flex justify-between text-xs text-white/60 mt-1">
           <span>Day 1</span>
           <span>Day {cycleLength}</span>
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="mt-5 pt-5 border-t border-black/8 grid grid-cols-3 gap-4">
-        <Stat
-          label="Next Period"
-          value={isPeriodDue ? "Due today!" : `${daysUntilNextPeriod}d`}
-        />
-        <Stat
-          label="Ovulation Est."
-          value={format(ovulationDate, "MMM d")}
-        />
-        <Stat
-          label="Confidence"
-          value={`${confidenceScore}%`}
-          muted={confidenceScore < 60}
-        />
+      {/* Info strip */}
+      <div className={`${cfg.softBg} border-t-0 border px-6 py-4 grid grid-cols-2 gap-4`}>
+        <InfoItem emoji="📅" label="Phase Day" value={`Day ${phaseDay}`} />
+        <InfoItem emoji="🥚" label="Ovulation Est." value={format(ovulationDate, "MMM d")} />
+      </div>
+
+      {/* Tip */}
+      <div className="bg-white px-6 py-3.5 border border-t-0 border-pink-100 rounded-b-3xl">
+        <p className="text-xs text-gray-500 italic text-center">{cfg.tip}</p>
       </div>
     </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  muted,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-}) {
+function InfoItem({ emoji, label, value }: { emoji: string; label: string; value: string }) {
   return (
-    <div className="text-center">
-      <div className={`text-lg font-bold ${muted ? "opacity-50" : ""}`}>
-        {value}
+    <div className="flex items-center gap-2.5">
+      <span className="text-xl">{emoji}</span>
+      <div>
+        <p className="text-xs text-gray-400 font-medium">{label}</p>
+        <p className="text-sm font-bold text-gray-800">{value}</p>
       </div>
-      <div className="text-xs opacity-55 mt-0.5">{label}</div>
     </div>
   );
 }
