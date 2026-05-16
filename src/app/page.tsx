@@ -11,7 +11,7 @@ export default function Home() {
           href="/login"
           className="px-6 py-2.5 rounded-full bg-white text-gray-800 font-medium shadow-sm hover:shadow-md transition-all border border-gray-100"
         >
-          Sign In
+          Sign In ✨
         </Link>
       </nav>
 

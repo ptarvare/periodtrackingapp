@@ -4,20 +4,22 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
     User,
     onAuthStateChanged,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    GoogleAuthProvider,
-    setPersistence,
-    browserLocalPersistence,
+    sendSignInLinkToEmail,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
     signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+const ACTION_CODE_SETTINGS = {
+    url: "https://luna-app-beta.vercel.app/login",
+    handleCodeInApp: true,
+};
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    googleSignIn: () => Promise<void>;
+    sendMagicLink: (email: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -27,28 +29,9 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const googleSignIn = async () => {
-        const provider = new GoogleAuthProvider();
-        try {
-            // Use local persistence so mobile browsers don't lose state
-            await setPersistence(auth, browserLocalPersistence);
-            await signInWithPopup(auth, provider);
-        } catch (error: any) {
-            // Popup blocked (common on mobile) — fall back to redirect
-            if (
-                error.code === "auth/popup-blocked" ||
-                error.code === "auth/popup-closed-by-user"
-            ) {
-                try {
-                    await setPersistence(auth, browserLocalPersistence);
-                    await signInWithRedirect(auth, provider);
-                } catch (redirectErr) {
-                    console.error("Redirect sign-in error:", redirectErr);
-                }
-            } else {
-                console.error("Sign-in error:", error);
-            }
-        }
+    const sendMagicLink = async (email: string) => {
+        await sendSignInLinkToEmail(auth, email, ACTION_CODE_SETTINGS);
+        localStorage.setItem("lunaEmailForSignIn", email);
     };
 
     const logout = async () => {
@@ -60,10 +43,15 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        // Handle result if the user was redirected back (mobile fallback)
-        getRedirectResult(auth).catch(() => {
-            // Silently ignore — no redirect was in progress
-        });
+        // Complete sign-in if this page was opened via a magic link
+        if (isSignInWithEmailLink(auth, window.location.href)) {
+            const email = localStorage.getItem("lunaEmailForSignIn");
+            if (email) {
+                signInWithEmailLink(auth, email, window.location.href)
+                    .then(() => localStorage.removeItem("lunaEmailForSignIn"))
+                    .catch((err) => console.error("Magic link sign-in error:", err));
+            }
+        }
 
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -73,7 +61,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading, googleSignIn, logout }}>
+        <AuthContext.Provider value={{ user, loading, sendMagicLink, logout }}>
             {children}
         </AuthContext.Provider>
     );
