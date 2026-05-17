@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+
 export default function Nav() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
 
   const initials = user?.displayName
@@ -28,8 +29,8 @@ export default function Nav() {
             <NavLink href="/profile" active={pathname === "/profile"}>✏️ Edit Profile</NavLink>
           </nav>
 
-          {/* Avatar + sign out */}
-          <div className="flex items-center gap-2.5">
+          {/* Avatar */}
+          <div className="flex items-center">
             {user?.photoURL ? (
               <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-pink-200" />
             ) : (
@@ -37,9 +38,6 @@ export default function Nav() {
                 {initials}
               </div>
             )}
-            <button onClick={logout} className="hidden sm:block text-xs text-gray-400 hover:text-pink-500 transition-colors font-medium">
-              Sign out
-            </button>
           </div>
         </div>
       </header>
@@ -49,10 +47,6 @@ export default function Nav() {
         <div className="flex items-center justify-around h-16 px-6">
           <BottomTab href="/dashboard" active={pathname === "/dashboard"} emoji="🏠" label="Home" />
           <BottomTab href="/profile" active={pathname === "/profile"} emoji="✏️" label="Profile" />
-          <button onClick={logout} className="flex flex-col items-center gap-0.5 py-2 px-4">
-            <span className="text-xl">👋</span>
-            <span className="text-xs text-gray-400 font-medium">Sign out</span>
-          </button>
         </div>
       </nav>
     </>
