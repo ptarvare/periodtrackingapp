@@ -27,7 +27,6 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
     const googleSignIn = async (): Promise<"ok" | "popup-blocked"> => {
         const provider = new GoogleAuthProvider();
-        await setPersistence(auth, browserLocalPersistence);
         try {
             await signInWithPopup(auth, provider);
             return "ok";
@@ -52,6 +51,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
+        setPersistence(auth, browserLocalPersistence).catch(console.error);
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
