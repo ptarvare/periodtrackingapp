@@ -2,7 +2,7 @@
   "name": "Luna — Cycle Companion",
   "short_name": "Luna",
   "description": "Your holistic cycle companion. Track your period, understand your phases, and get daily guidance on food, exercise, and lifestyle.",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#FDF2F8",
   "theme_color": "#ec4899",
