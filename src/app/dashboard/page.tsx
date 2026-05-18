@@ -9,6 +9,7 @@ import { calculateCycleStatus, CycleStatus } from "@/lib/predictionEngine";
 import { getRecommendations, DailyRecommendation } from "@/lib/recommendationEngine";
 import { format, differenceInDays } from "date-fns";
 import PleaseSignIn from "@/components/PleaseSignIn";
+import { track } from "@/lib/analytics";
 import PhaseCard from "@/components/PhaseCard";
 import DailyRecs from "@/components/DailyRecs";
 import Nav from "@/components/Nav";
@@ -39,6 +40,7 @@ export default function DashboardPage() {
         const cycleStatus = calculateCycleStatus(p);
         setStatus(cycleStatus);
         setRecs(getRecommendations(cycleStatus, p));
+        track("dashboard_viewed", { phase: cycleStatus.currentPhase, day_of_cycle: cycleStatus.dayOfCycle, days_until_period: cycleStatus.daysUntilNextPeriod });
       } catch (e) {
         console.error("Dashboard fetch error", e);
       } finally {

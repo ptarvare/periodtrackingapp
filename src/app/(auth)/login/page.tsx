@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
+import { track, identifyUser } from "@/lib/analytics";
 
 type Screen = "login" | "blocked";
 
@@ -20,12 +21,12 @@ export default function LoginPage() {
         (async () => {
             try {
                 const snap = await getDoc(doc(db, "users", user.uid));
-                router.push(
-                    snap.exists() && snap.data().onboardingCompleted && snap.data().profile?.periodDates?.length
-                        ? "/dashboard"
-                        : "/onboarding"
-                );
+                const isReturning = snap.exists() && snap.data().onboardingCompleted && snap.data().profile?.periodDates?.length;
+                identifyUser(user.uid, { email: user.email, name: user.displayName });
+                track("user_signed_in", { returning_user: isReturning });
+                router.push(isReturning ? "/dashboard" : "/onboarding");
             } catch {
+                track("user_signed_in", { returning_user: false });
                 router.push("/onboarding");
             }
         })();

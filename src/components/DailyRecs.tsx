@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DailyRecommendation } from "@/lib/recommendationEngine";
+import { track } from "@/lib/analytics";
 
 const TABS = [
   { key: "diet",       label: "Food",       emoji: "🥗" },
@@ -14,6 +15,11 @@ type TabKey = typeof TABS[number]["key"];
 
 export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
   const [active, setActive] = useState<TabKey>("diet");
+
+  const handleTabClick = (key: TabKey) => {
+    setActive(key);
+    track("recommendation_tab_clicked", { tab: key });
+  };
 
   const items = recs[active] ?? [];
 
@@ -30,7 +36,7 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActive(tab.key)}
+            onClick={() => handleTabClick(tab.key)}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-semibold border-b-2 transition-all ${
               active === tab.key
                 ? "border-pink-500 text-pink-600"

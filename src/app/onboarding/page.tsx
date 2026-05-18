@@ -7,6 +7,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, parseISO } from "date-fns";
 import PleaseSignIn from "@/components/PleaseSignIn";
+import { track } from "@/lib/analytics";
 
 export default function OnboardingPage() {
     const { user } = useAuth();
@@ -53,6 +54,7 @@ export default function OnboardingPage() {
                 onboardingCompleted: true,
                 createdAt: new Date().toISOString(),
             });
+            track("onboarding_completed", { period_dates_count: periodDates.length, avg_cycle_length: avgCycleLength });
             router.push("/dashboard");
         } catch (error) {
             console.error("Error saving profile:", error);
