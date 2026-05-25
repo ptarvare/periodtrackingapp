@@ -5,10 +5,10 @@ import { DailyRecommendation } from "@/lib/recommendationEngine";
 import { track } from "@/lib/analytics";
 
 const TABS = [
-  { key: "diet",       label: "Food",       emoji: "🥗" },
-  { key: "workout",    label: "Exercise",   emoji: "💪" },
-  { key: "supplements",label: "Supplements",emoji: "💊" },
-  { key: "lifestyle",  label: "Lifestyle",  emoji: "🌿" },
+  { key: "diet",        label: "Food",        emoji: "🥗" },
+  { key: "workout",     label: "Exercise",    emoji: "💪" },
+  { key: "supplements", label: "Supplements", emoji: "💊" },
+  { key: "lifestyle",   label: "Lifestyle",   emoji: "🌿" },
 ] as const;
 
 type TabKey = typeof TABS[number]["key"];
@@ -22,6 +22,10 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
   };
 
   const items = recs[active] ?? [];
+  const avoidItems =
+    active === "diet" ? recs.dietAvoid :
+    active === "workout" ? recs.workoutAvoid :
+    [];
 
   return (
     <div className="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
@@ -66,12 +70,40 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
           </ul>
         )}
 
+        {/* Avoid section */}
+        {avoidItems && avoidItems.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">Limit or Avoid</p>
+            <ul className="space-y-2">
+              {avoidItems.map((item, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="text-amber-400 shrink-0 mt-0.5">↓</span>
+                  <span className="text-sm text-gray-600 leading-relaxed">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {active === "supplements" && items.length > 0 && (
           <p className="text-xs text-gray-400 mt-4 italic">
             * Not medical advice. Consult your doctor before starting any supplement.
           </p>
         )}
       </div>
+
+      {/* Priya's expert tip */}
+      {recs.expertTip && (
+        <div className="mx-4 mb-4 p-4 bg-purple-50 rounded-2xl border border-purple-100">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              P
+            </div>
+            <p className="text-xs font-bold text-purple-700">Priya says</p>
+          </div>
+          <p className="text-sm text-purple-900 leading-relaxed">{recs.expertTip}</p>
+        </div>
+      )}
 
       {/* PCOS tip */}
       {recs.pcosTip && (

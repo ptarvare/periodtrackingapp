@@ -2,9 +2,12 @@ import { CycleStatus, Phase } from "./predictionEngine";
 
 export interface DailyRecommendation {
   diet: string[];
+  dietAvoid: string[];
   workout: string[];
+  workoutAvoid: string[];
   supplements: string[];
   lifestyle: string[];
+  expertTip: string;
   pcosTip?: string;
 }
 
@@ -34,40 +37,56 @@ function baseRecs(phase: Phase): DailyRecommendation {
     case "Menstrual":
       return {
         diet: [
-          "Iron-rich foods — spinach, lentils, red meat",
+          "Iron-rich foods: red meat, liver, dark leafy greens, lentils — pair with Vitamin C for better absorption",
+          "Omega-3 fatty acids: fatty fish, walnuts, flaxseeds — reduce inflammation and cramping",
+          "Magnesium-rich foods: dark chocolate, pumpkin seeds, bananas — ease cramps and support muscle relaxation",
           "Warm, easy-to-digest meals like soups and stews",
-          "Dark chocolate (70%+) for magnesium and mood",
-          "Ginger tea to ease cramps",
+        ],
+        dietAvoid: [
+          "Junk food, oily food, and high-sugar foods — these worsen inflammation and make cramps worse",
         ],
         workout: [
-          "Rest or light walking (20–30 min)",
-          "Gentle yoga — child's pose, supine twists",
-          "Stretching and foam rolling",
+          "Light walking (20–30 min), yoga, or gentle stretching",
+          "Low-intensity strength training if energy allows — go slow, no new movements",
+          "Foam rolling and mobility work",
+        ],
+        workoutAvoid: [
+          "HIIT and heavy lifting — don't add extra physical or mental stress this week",
+          "Don't try anything new — familiar, low-intensity movement only",
         ],
         supplements: [
-          "Magnesium glycinate (300–400 mg) — cramp relief",
-          "Iron (if deficient) — take with Vitamin C",
-          "Omega-3 fatty acids — anti-inflammatory",
+          "Magnesium glycinate (300–400 mg) — cramp relief and muscle relaxation",
+          "Iron (if deficient) — take with Vitamin C for absorption",
+          "Omega-3 (EPA+DHA) — anti-inflammatory",
         ],
         lifestyle: [
-          "Prioritize 8+ hours of sleep",
-          "Use a heating pad for lower back cramps",
-          "Reduce screen time and take it slow",
+          "Prioritise rest and gentle movement — this is your body's recovery week",
+          "Sleep quality impacts hormone balance more than any supplement",
+          "Rest doesn't mean doing nothing — light movement or a calming habit you love works best",
         ],
+        expertTip:
+          "Your period is not a test of willpower. If you're not hitting your PR, don't feel guilty — your body demands extra care right now. Respect what it's telling you.",
       };
 
     case "Follicular":
       return {
         diet: [
-          "Fermented foods — yogurt, kimchi, kefir for gut health",
-          "Lean protein — eggs, chicken, tofu",
-          "Complex carbs — oats, sweet potato for rising energy",
-          "Seeds — flaxseeds to support estrogen metabolism",
+          "Lean proteins: chicken, fish, tofu, eggs — support muscle growth and recovery",
+          "Complex carbs: oats, quinoa, sweet potatoes — fuel your increased energy and training",
+          "Fermented foods: kimchi, sauerkraut, yogurt — support gut health and estrogen metabolism",
+          "Seeds: flaxseeds to support estrogen metabolism",
+        ],
+        dietAvoid: [
+          "Refined sugar in excess — spikes insulin when you're metabolically flexible",
         ],
         workout: [
-          "Strength training — great time for PRs",
+          "Progressive overload: heavy compound lifts — squats, deadlifts, bench press",
+          "Higher training volume — your body adapts and recovers faster this phase",
+          "Skill work and new movements — coordination and learning peak here",
           "HIIT or sprints if energy is high",
-          "Try a new class or sport — coordination peaks here",
+        ],
+        workoutAvoid: [
+          "Under-eating while training hard — appetite may be lower but energy demands are high",
         ],
         supplements: [
           "B-complex — supports energy and estrogen metabolism",
@@ -75,24 +94,34 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "Zinc — supports follicle development",
         ],
         lifestyle: [
-          "Best phase for social plans and new projects",
-          "Start habits here — motivation is highest",
-          "Great time for brainstorming and creativity",
+          "Take advantage of this energy surge — plan your hardest training sessions now",
+          "Great time for social plans, new projects, and big work challenges",
+          "Start new habits here — motivation and consistency are highest this phase",
         ],
+        expertTip:
+          "Higher estrogen can suppress appetite, but your body needs fuel to build strength. Don't accidentally under-fuel your best training phase — eat to match your effort.",
       };
 
     case "Ovulatory":
       return {
         diet: [
-          "Antioxidant-rich foods — berries, bell peppers, dark leafy greens",
-          "Cruciferous vegetables — broccoli, cauliflower to clear excess estrogen",
+          "Antioxidant-rich foods: berries, colourful vegetables — reduce oxidative stress",
+          "Healthy fats: avocado, nuts, olive oil — support hormone production",
+          "High-fibre foods: cruciferous vegetables, whole grains — help clear excess estrogen",
           "Hydrate well — 2.5–3L water daily",
-          "Light, fibre-rich meals",
+        ],
+        dietAvoid: [
+          "Excess alcohol — interferes with estrogen metabolism",
+          "Heavily processed foods",
         ],
         workout: [
-          "High-intensity intervals — peak strength and endurance",
-          "Heavy compound lifts — deadlifts, squats",
-          "Group classes or team sports for social energy",
+          "Go for PRs and max lifts — this is your peak performance window",
+          "High-intensity intervals, competitive sports, anything requiring power",
+          "Heavy compound lifts: deadlifts, squats, bench",
+          "Warm up properly — feeling invincible doesn't mean you're immune to injury",
+        ],
+        workoutAvoid: [
+          "Overtraining — listen to joint signals even when energy feels limitless",
         ],
         supplements: [
           "Vitamin C (500–1000 mg) — antioxidant support",
@@ -100,35 +129,48 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "CoQ10 — cellular energy and antioxidant",
         ],
         lifestyle: [
-          "High communication and confidence window — use it",
-          "Good time for difficult conversations or negotiations",
-          "Peak energy: plan demanding tasks today",
+          "This window is just 3–4 days — time your training peaks strategically",
+          "Schedule important meetings and difficult conversations — communication peaks here",
+          "Plan anything requiring courage or peak performance — mental and physical output are highest",
         ],
+        expertTip:
+          "This phase is only 3–4 days. Women often miss the ideal window for testing maxes because they don't track it. Know when it's coming and plan your peak sessions around it.",
       };
 
     case "Luteal":
       return {
         diet: [
-          "Complex carbs to stabilise blood sugar — quinoa, brown rice",
-          "Fibre-rich foods — oats, legumes, leafy greens",
-          "Reduce caffeine, alcohol, and excess salt",
-          "Magnesium-rich foods — pumpkin seeds, dark chocolate, almonds",
+          "Magnesium-rich foods: leafy greens, pumpkin seeds, dark chocolate — ease PMS and support mood",
+          "Complex carbs with fibre: sweet potatoes, brown rice, legumes — stabilise blood sugar and serotonin",
+          "B-vitamin foods: eggs, leafy greens, salmon — support energy and hormone metabolism",
+          "Your body needs ~100–300 extra calories at rest this phase — eat nutrient-dense food",
+        ],
+        dietAvoid: [
+          "Excess caffeine — worsens anxiety and disrupts sleep",
+          "High-sodium foods — increases bloating",
+          "Refined sugars — blood sugar swings worsen mood and PMS",
         ],
         workout: [
-          "Moderate cardio — walks, cycling, swimming",
-          "Pilates or barre for strength without intensity",
-          "Yoga — especially for PMS symptoms",
+          "Moderate strength training, steady-state cardio, Pilates, or power yoga",
+          "Focus on technique and time under tension — not new PRs",
+          "In the final week before your period, pull back volume noticeably",
+        ],
+        workoutAvoid: [
+          "Excessive HIIT or max-effort lifting, especially in the final week — recovery takes longer now",
+          "Overtraining leads to burnout and poor recovery this phase",
         ],
         supplements: [
-          "Magnesium glycinate (300–400 mg) — reduces PMS and bloating",
+          "Magnesium glycinate (300–400 mg) — reduces PMS, bloating, and supports sleep",
           "Vitamin B6 (50–100 mg) — mood and PMS relief",
           "Chasteberry (Vitex) — may ease PMS symptoms",
         ],
         lifestyle: [
-          "Reduce stress — cortisol worsens PMS",
-          "Build in extra self-care time",
-          "Journalling and reflection suit this quieter phase",
+          "Eat more — not junk, but nutrient-dense food. Restricting backfires badly this phase",
+          "Build in extra self-care; your body is doing more metabolic work than you realise",
+          "Journalling and reflection suit this quieter, inward phase",
         ],
+        expertTip:
+          "Your increased appetite in the luteal phase is metabolic, not a lack of willpower. Your body burns more calories at rest — feed it properly and PMS symptoms improve dramatically.",
       };
   }
 }
@@ -142,20 +184,19 @@ function applyPCOS(
 ): void {
   if (!hasPCOS) return;
 
-  recs.diet.push("Prioritise low-GI foods to manage insulin spikes");
+  recs.diet.push("Balance every meal with protein, fibre, and healthy fat to stabilise blood sugar");
   recs.supplements.push(
     "Inositol (Myo-inositol 2g + D-chiro 50mg) — insulin sensitivity*",
     "Omega-3 (EPA+DHA 2g) — inflammation and androgen balance*"
   );
 
-  // Remove high-intensity suggestions in phases where cortisol is already elevated
   if (phase === "Luteal" || phase === "Menstrual") {
     recs.workout = recs.workout.filter((w) => !w.toLowerCase().includes("hiit"));
     recs.workout.push("Resistance training with moderate weights", "Daily 20-min walk");
   }
 
   recs.pcosTip =
-    "Blood sugar consistency is your best friend today. Eat balanced meals every 3–4 hours and avoid skipping.";
+    "High insulin drives androgen production in PCOS — food pairing (protein + fibre + fat at every meal) is your most powerful lever. Prioritise strength training 3–4x/week over excessive cardio, which spikes cortisol and worsens insulin resistance.";
 }
 
 // ─── Goal modifier ────────────────────────────────────────────────────────────

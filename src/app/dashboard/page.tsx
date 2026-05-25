@@ -89,6 +89,31 @@ export default function DashboardPage() {
             {/* Recommendations */}
             {recs && <DailyRecs recs={recs} />}
 
+            {/* Expert card */}
+            <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Your Expert</p>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold shrink-0">
+                  P
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-900">Priya Tarvare</p>
+                  <p className="text-xs text-pink-600 font-medium mt-0.5">Certified Personal Trainer & Integrative Nutrition Practitioner</p>
+                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                    Strength coach and gut health practitioner with 6+ years of experience. She combines evidence-based training with nutritional strategies that support your hormones and microbiome.
+                  </p>
+                  <a
+                    href="https://www.instagram.com/fitcoachpriya"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+                  >
+                    <span>📸</span> @fitcoachpriya
+                  </a>
+                </div>
+              </div>
+            </div>
+
             <p className="text-center text-xs text-gray-400 px-4 pb-4 leading-relaxed">
               Luna is a wellness tool, not a medical device. Always consult a healthcare professional for medical concerns.
             </p>
