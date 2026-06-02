@@ -1,7 +1,14 @@
 import { CycleStatus, Phase } from "./predictionEngine";
 
+export interface MealPlan {
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+}
+
 export interface DailyRecommendation {
-  diet: string[];
+  meals: MealPlan;
+  dietNotes: string[];
   dietAvoid: string[];
   workout: string[];
   workoutAvoid: string[];
@@ -61,33 +68,34 @@ function baseRecs(phase: Phase): DailyRecommendation {
   switch (phase) {
     case "Menstrual":
       return {
-        diet: [
-          "Iron-rich foods: red meat, liver, dark leafy greens, lentils — pair with Vitamin C for better absorption",
-          "Omega-3 fatty acids: fatty fish, walnuts, flaxseeds — reduce inflammation and cramping",
-          "Magnesium-rich foods: dark chocolate, pumpkin seeds, bananas — ease cramps and support muscle relaxation",
-          "Warm, easy-to-digest meals like soups and stews",
-        ],
+        meals: {
+          breakfast: "Iron + complex carbs (oats with raisins and flaxseeds, squeeze of lemon — vitamin C triples iron absorption)",
+          lunch: "Anti-inflammatory protein + greens (lentil soup with turmeric, dark leafy salad, whole grain bread)",
+          dinner: "Omega-3 rich + warming (salmon or sardines with sweet potato mash, ginger tea before bed)",
+        },
+        dietNotes: [],
         dietAvoid: [
-          "Junk food, oily food, and high-sugar foods — these worsen inflammation and make cramps worse",
+          "Junk food, oily food, high-sugar foods — worsen inflammation and make cramps worse",
+          "Cold foods and raw salads — harder to digest; stick to warm, cooked meals",
         ],
         workout: [
           "Light walking (20–30 min), yoga, or gentle stretching",
-          "Low-intensity strength training if energy allows — go slow, no new movements",
+          "Low-intensity strength training if energy allows — familiar movements only",
           "Foam rolling and mobility work",
         ],
         workoutAvoid: [
-          "HIIT and heavy lifting — don't add extra physical or mental stress this week",
-          "Don't try anything new — familiar, low-intensity movement only",
+          "HIIT and heavy lifting — don't add extra stress this week",
+          "Anything new — this is not the phase to test limits",
         ],
         supplements: [
           "Magnesium glycinate (300–400 mg) — cramp relief and muscle relaxation",
-          "Iron (if deficient) — take with Vitamin C for absorption",
+          "Iron (if deficient) — take with Vitamin C for best absorption",
           "Omega-3 (EPA+DHA) — anti-inflammatory",
         ],
         lifestyle: [
-          "Prioritise rest and gentle movement — this is your body's recovery week",
+          "Prioritise rest — this is your body's recovery week, not a failure week",
           "Sleep quality impacts hormone balance more than any supplement",
-          "Rest doesn't mean doing nothing — light movement or a calming habit you love works best",
+          "Rest doesn't mean doing nothing — a warm bath or a calming habit you love counts",
         ],
         expertTip:
           "Your period is not a test of willpower. If you're not hitting your PR, don't feel guilty — your body demands extra care right now. Respect what it's telling you.",
@@ -95,19 +103,19 @@ function baseRecs(phase: Phase): DailyRecommendation {
 
     case "Follicular":
       return {
-        diet: [
-          "Lean proteins: chicken, fish, tofu, eggs — support muscle growth and recovery",
-          "Complex carbs: oats, quinoa, sweet potatoes — fuel your increased energy and training",
-          "Fermented foods: kimchi, sauerkraut, yogurt — support gut health and estrogen metabolism",
-          "Seeds: flaxseeds to support estrogen metabolism",
-        ],
+        meals: {
+          breakfast: "Lean protein + complex carbs (eggs with whole grain toast, or oats with Greek yogurt and mixed berries)",
+          lunch: "Fermented foods + protein (kimchi fried rice with chicken, or tofu salad with sauerkraut and sesame dressing)",
+          dinner: "Muscle-building protein + complex carbs (grilled chicken or fish with quinoa and roasted vegetables)",
+        },
+        dietNotes: [],
         dietAvoid: [
-          "Refined sugar in excess — spikes insulin when you're metabolically flexible",
+          "Refined sugar in excess — spikes insulin when your metabolism is at its most flexible",
         ],
         workout: [
-          "Progressive overload: heavy compound lifts — squats, deadlifts, bench press",
-          "Higher training volume — your body adapts and recovers faster this phase",
-          "Skill work and new movements — coordination and learning peak here",
+          "Progressive overload — heavy compound lifts: squats, deadlifts, bench press",
+          "Higher training volume — body adapts and recovers faster this phase",
+          "Skill work and new movements — coordination and learning peak now",
           "HIIT or sprints if energy is high",
         ],
         workoutAvoid: [
@@ -119,7 +127,7 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "Zinc — supports follicle development",
         ],
         lifestyle: [
-          "Take advantage of this energy surge — plan your hardest training sessions now",
+          "Take advantage of this energy surge — plan your hardest sessions now",
           "Great time for social plans, new projects, and big work challenges",
           "Start new habits here — motivation and consistency are highest this phase",
         ],
@@ -129,15 +137,15 @@ function baseRecs(phase: Phase): DailyRecommendation {
 
     case "Ovulatory":
       return {
-        diet: [
-          "Antioxidant-rich foods: berries, colourful vegetables — reduce oxidative stress",
-          "Healthy fats: avocado, nuts, olive oil — support hormone production",
-          "High-fibre foods: cruciferous vegetables, whole grains — help clear excess estrogen",
-          "Hydrate well — 2.5–3L water daily",
-        ],
+        meals: {
+          breakfast: "Antioxidant-rich + fibre (berry smoothie bowl with chia seeds, or eggs with colourful peppers and spinach)",
+          lunch: "Fibre-rich + healthy fats (cruciferous vegetable stir-fry with avocado, or lentil salad with olive oil and lemon)",
+          dinner: "Balanced + light (grilled fish with steamed broccoli and brown rice, or chickpea curry with mixed vegetables)",
+        },
+        dietNotes: [],
         dietAvoid: [
-          "Excess alcohol — interferes with estrogen metabolism",
-          "Heavily processed foods",
+          "Excess alcohol — interferes with estrogen clearance",
+          "Heavily processed foods — crowd out the nutrients your body needs most now",
         ],
         workout: [
           "Go for PRs and max lifts — this is your peak performance window",
@@ -154,8 +162,8 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "CoQ10 — cellular energy and antioxidant",
         ],
         lifestyle: [
-          "This window is just 3–4 days — time your training peaks strategically",
-          "Schedule important meetings and difficult conversations — communication peaks here",
+          "This window is just 3–4 days — time your training and big decisions strategically",
+          "Schedule important meetings and difficult conversations — communication peaks now",
           "Plan anything requiring courage or peak performance — mental and physical output are highest",
         ],
         expertTip:
@@ -164,16 +172,16 @@ function baseRecs(phase: Phase): DailyRecommendation {
 
     case "Luteal":
       return {
-        diet: [
-          "Magnesium-rich foods: leafy greens, pumpkin seeds, dark chocolate — ease PMS and support mood",
-          "Complex carbs with fibre: sweet potatoes, brown rice, legumes — stabilise blood sugar and serotonin",
-          "B-vitamin foods: eggs, leafy greens, salmon — support energy and hormone metabolism",
-          "Your body needs ~100–300 extra calories at rest this phase — eat nutrient-dense food",
-        ],
+        meals: {
+          breakfast: "Magnesium + complex carbs (banana oat pancakes with pumpkin seeds, or whole grain toast with almond butter and banana)",
+          lunch: "B-vitamin rich + blood sugar stabilising (salmon with brown rice and leafy greens, or egg salad on whole grain with spinach)",
+          dinner: "Comforting + anti-PMS (sweet potato and lentil curry, or chicken with roasted vegetables and quinoa — dark chocolate for dessert)",
+        },
+        dietNotes: [],
         dietAvoid: [
-          "Excess caffeine — worsens anxiety and disrupts sleep",
+          "Excess caffeine — worsens anxiety and disrupts sleep this phase",
           "High-sodium foods — increases bloating",
-          "Refined sugars — blood sugar swings worsen mood and PMS",
+          "Refined sugars — blood sugar swings worsen mood and PMS symptoms",
         ],
         workout: [
           "Moderate strength training, steady-state cardio, Pilates, or power yoga",
@@ -181,8 +189,8 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "In the final week before your period, pull back volume noticeably",
         ],
         workoutAvoid: [
-          "Excessive HIIT or max-effort lifting, especially in the final week — recovery takes longer now",
-          "Overtraining leads to burnout and poor recovery this phase",
+          "Excessive HIIT or max-effort lifting, especially the final week — recovery takes longer now",
+          "Overtraining leads to burnout and worsened PMS",
         ],
         supplements: [
           "Magnesium glycinate (300–400 mg) — reduces PMS, bloating, and supports sleep",
@@ -190,8 +198,8 @@ function baseRecs(phase: Phase): DailyRecommendation {
           "Chasteberry (Vitex) — may ease PMS symptoms",
         ],
         lifestyle: [
-          "Eat more — not junk, but nutrient-dense food. Restricting backfires badly this phase",
-          "Build in extra self-care; your body is doing more metabolic work than you realise",
+          "Eat more — not junk, but nutrient-dense food. Restricting backfires every time this phase",
+          "Build in extra self-care — your body is doing more metabolic work than you realise",
           "Journalling and reflection suit this quieter, inward phase",
         ],
         expertTip:
@@ -209,7 +217,7 @@ function applyPCOS(
 ): void {
   if (!hasPCOS) return;
 
-  recs.diet.push("Balance every meal with protein, fibre, and healthy fat to stabilise blood sugar");
+  recs.dietNotes.push("Balance every meal with protein, fibre, and healthy fat to stabilise blood sugar");
   recs.supplements.push(
     "Inositol (Myo-inositol 2g + D-chiro 50mg) — insulin sensitivity*",
     "Omega-3 (EPA+DHA 2g) — inflammation and androgen balance*"
@@ -233,7 +241,7 @@ function applyGoals(
   wantsFatLoss: boolean
 ): void {
   if (wantsMuscle) {
-    recs.diet.push("Target 1.6–2g protein per kg bodyweight today");
+    recs.dietNotes.push("Target 1.6–2g protein per kg bodyweight today");
     if (phase === "Follicular" || phase === "Ovulatory") {
       recs.workout.push("Focus on progressive overload — add weight or reps");
       recs.supplements.push("Creatine monohydrate (5g/day) — muscle output and recovery");
@@ -244,6 +252,6 @@ function applyGoals(
     if (phase === "Follicular" || phase === "Ovulatory") {
       recs.workout.push("Optional: 15-min fasted walk in the morning");
     }
-    recs.diet.push("Eat protein first at each meal to manage hunger");
+    recs.dietNotes.push("Eat protein first at each meal to manage hunger");
   }
 }

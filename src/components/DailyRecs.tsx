@@ -21,11 +21,13 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
     track("recommendation_tab_clicked", { tab: key });
   };
 
-  const items = recs[active] ?? [];
-  const avoidItems =
-    active === "diet" ? recs.dietAvoid :
-    active === "workout" ? recs.workoutAvoid :
-    [];
+  const nonDietMap: Record<Exclude<TabKey, "diet">, string[]> = {
+    workout:     recs.workout,
+    supplements: recs.supplements,
+    lifestyle:   recs.lifestyle,
+  };
+  const items: string[] = active === "diet" ? [] : nonDietMap[active as Exclude<TabKey, "diet">];
+  const avoidItems: string[] = active === "workout" ? recs.workoutAvoid : [];
 
   return (
     <div className="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
@@ -55,40 +57,87 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
 
       {/* Content */}
       <div className="px-5 py-4">
-        {items.length === 0 ? (
+        {active === "diet" ? (
+          <div className="space-y-3">
+            {/* Meal cards */}
+            {(
+              [
+                { emoji: "🌅", label: "Breakfast", value: recs.meals.breakfast },
+                { emoji: "☀️", label: "Lunch",     value: recs.meals.lunch },
+                { emoji: "🌙", label: "Dinner",    value: recs.meals.dinner },
+              ] as const
+            ).map(({ emoji, label, value }) => (
+              <div key={label} className="flex items-start gap-3 p-3.5 bg-pink-50/60 rounded-2xl border border-pink-100">
+                <span className="text-xl shrink-0 mt-0.5">{emoji}</span>
+                <div>
+                  <p className="text-xs font-bold text-pink-600 uppercase tracking-wide mb-0.5">{label}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{value}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Goal / condition notes */}
+            {recs.dietNotes.length > 0 && (
+              <div className="mt-1 pt-3 border-t border-gray-100 space-y-1.5">
+                {recs.dietNotes.map((note, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-pink-400 shrink-0 mt-0.5">→</span>
+                    <span className="text-sm text-gray-600 leading-relaxed">{note}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Avoid section */}
+            {recs.dietAvoid.length > 0 && (
+              <div className="mt-1 pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">Limit or Avoid</p>
+                <ul className="space-y-2">
+                  {recs.dietAvoid.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-amber-400 shrink-0 mt-0.5">↓</span>
+                      <span className="text-sm text-gray-600 leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : items.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-4">No suggestions for this tab.</p>
         ) : (
-          <ul className="space-y-3">
-            {items.map((item, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="mt-0.5 w-5 h-5 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-xs font-bold shrink-0">
-                  {i + 1}
-                </span>
-                <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Avoid section */}
-        {avoidItems && avoidItems.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-gray-100">
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">Limit or Avoid</p>
-            <ul className="space-y-2">
-              {avoidItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-amber-400 shrink-0 mt-0.5">↓</span>
-                  <span className="text-sm text-gray-600 leading-relaxed">{item}</span>
+          <>
+            <ul className="space-y-3">
+              {items.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-0.5 w-5 h-5 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-xs font-bold shrink-0">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
-          </div>
-        )}
 
-        {active === "supplements" && items.length > 0 && (
-          <p className="text-xs text-gray-400 mt-4 italic">
-            * Not medical advice. Consult your doctor before starting any supplement.
-          </p>
+            {avoidItems && avoidItems.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">Limit or Avoid</p>
+                <ul className="space-y-2">
+                  {avoidItems.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-amber-400 shrink-0 mt-0.5">↓</span>
+                      <span className="text-sm text-gray-600 leading-relaxed">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {active === "supplements" && (
+              <p className="text-xs text-gray-400 mt-4 italic">
+                * Not medical advice. Consult your doctor before starting any supplement.
+              </p>
+            )}
+          </>
         )}
       </div>
 

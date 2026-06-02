@@ -38,18 +38,18 @@ export default function Home() {
 
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto mt-[-5vh]">
         <div className="inline-block px-4 py-1.5 rounded-full bg-pink-100 text-pink-700 text-sm font-semibold tracking-wide mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          ✨ Your Holistic Cycle Companion
+          ✨ Built for your rhythm
         </div>
 
         <h2 className="text-5xl md:text-7xl font-bold text-gray-900 leading-tight mb-8 tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-          Sync your life with <br />
+          Your body has a rhythm.<br />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600">
-            your cycle.
+            Plan your life around it.
           </span>
         </h2>
 
         <p className="text-xl text-gray-600 max-w-2xl mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-          Luna helps you understand your body, optimize your nutrition, and train smarter—tailored to your unique rhythm.
+          Luna helps you understand your cycle so you can stay on top of your game — every single day. Know when to push, when to rest, and what your body needs right now.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
@@ -72,18 +72,18 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-8">
           <FeatureCard
             icon="🔮"
-            title="Smart Prediction"
-            desc="Know exactly when your next phase starts and how it impacts your energy."
+            title="Know your phase"
+            desc="Understand exactly where you are in your cycle and what your body needs today — not tomorrow, today."
           />
           <FeatureCard
             icon="🥗"
-            title="Holistic Guidance"
-            desc="Daily diet, workout, and lifestyle tips tailored to your hormonal needs."
+            title="Eat for your cycle"
+            desc="Breakfast, lunch, and dinner recommendations that work with your hormones — personalised to your phase."
           />
           <FeatureCard
-            icon="💬"
-            title="Always-On Support"
-            desc="Chat with Luna to get instant answers about your symptoms and cycle."
+            icon="📊"
+            title="Discover your patterns"
+            desc="Log mood and energy daily. See which days you perform best and plan your life — meetings, workouts, rest — around it."
           />
         </div>
       </section>
