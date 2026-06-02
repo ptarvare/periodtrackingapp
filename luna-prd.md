@@ -166,7 +166,7 @@ Phase-specific tips from Priya included in recommendations.
 | 0.5 | Period confirmation fix — "may start today" not assumed Menstrual | 🔲 Next |
 | 1 | Landing page tagline update | ✅ Done |
 | 2 | Food recs: Breakfast / Lunch / Dinner restructure | ✅ Done |
-| 3 | 80 unique insights (20 per phase), deeper and more specific | 🔲 |
+| 3 | 80 unique insights (20 per phase), deeper and more specific | ✅ Done |
 | 4 | Log tab: phase-specific mood chips + PO warm response | 🔲 |
 | 5 | Report tab: daily history + phase-end report cards | 🔲 |
 | 6 | Nav restructure: 4 tabs (Home, Log, Report, Profile) | 🔲 |
