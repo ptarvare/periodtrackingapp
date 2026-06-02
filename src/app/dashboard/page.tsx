@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { calculateCycleStatus, CycleStatus } from "@/lib/predictionEngine";
 import { getRecommendations, DailyRecommendation } from "@/lib/recommendationEngine";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, parseISO } from "date-fns";
 import PleaseSignIn from "@/components/PleaseSignIn";
 import { track } from "@/lib/analytics";
 import PhaseCard from "@/components/PhaseCard";
 import DailyRecs from "@/components/DailyRecs";
+import LogModal from "@/components/LogModal";
 import Nav from "@/components/Nav";
+
+const TODAY = new Date().toISOString().split("T")[0];
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -21,34 +24,39 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<CycleStatus | null>(null);
   const [recs, setRecs] = useState<DailyRecommendation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logOpen, setLogOpen] = useState(false);
+  const [todayLogged, setTodayLogged] = useState(false);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid));
+    setLoading(true);
+    try {
+      const [snap, logSnap] = await Promise.all([
+        getDoc(doc(db, "users", user.uid)),
+        getDoc(doc(db, "users", user.uid, "logs", TODAY)),
+      ]);
 
-        if (!snap.exists() || !snap.data().onboardingCompleted || !snap.data().profile?.periodDates?.length) {
-          router.push("/onboarding");
-          return;
-        }
-
-        const p = snap.data().profile;
-        setProfile(p);
-
-        const cycleStatus = calculateCycleStatus(p);
-        setStatus(cycleStatus);
-        setRecs(getRecommendations(cycleStatus, p));
-        track("dashboard_viewed", { phase: cycleStatus.currentPhase, day_of_cycle: cycleStatus.dayOfCycle, days_until_period: cycleStatus.daysUntilNextPeriod });
-      } catch (e) {
-        console.error("Dashboard fetch error", e);
-      } finally {
-        setLoading(false);
+      if (!snap.exists() || !snap.data().onboardingCompleted || !snap.data().profile?.periodDates?.length) {
+        router.push("/onboarding");
+        return;
       }
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+
+      const p = snap.data().profile;
+      setProfile(p);
+      setTodayLogged(logSnap.exists());
+
+      const cycleStatus = calculateCycleStatus(p);
+      setStatus(cycleStatus);
+      setRecs(getRecommendations(cycleStatus, p));
+      track("dashboard_viewed", { phase: cycleStatus.currentPhase, day_of_cycle: cycleStatus.dayOfCycle, days_until_period: cycleStatus.daysUntilNextPeriod });
+    } catch (e) {
+      console.error("Dashboard fetch error", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, router]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const firstName = profile?.name?.split(" ")[0] ?? user?.displayName?.split(" ")[0] ?? "there";
 
@@ -70,6 +78,29 @@ export default function DashboardPage() {
             {/* ── Next period hero card ── */}
             {status && <NextPeriodCard status={status} />}
 
+            {/* ── Daily log check-in ── */}
+            <button
+              onClick={() => setLogOpen(true)}
+              className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all ${
+                todayLogged
+                  ? "bg-green-50 border-green-200"
+                  : "bg-white border-pink-100 hover:border-pink-300 shadow-sm"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{todayLogged ? "✅" : "📋"}</span>
+                <div className="text-left">
+                  <p className={`text-sm font-semibold ${todayLogged ? "text-green-800" : "text-gray-900"}`}>
+                    {todayLogged ? "Logged today" : "How are you feeling today?"}
+                  </p>
+                  <p className={`text-xs mt-0.5 ${todayLogged ? "text-green-600" : "text-gray-400"}`}>
+                    {todayLogged ? "Tap to update your log" : "Track mood, energy & symptoms — takes 30 seconds"}
+                  </p>
+                </div>
+              </div>
+              <span className="text-gray-300 text-lg">→</span>
+            </button>
+
             {/* ── Current phase card ── */}
             {status && <PhaseCard status={status} />}
 
@@ -88,6 +119,11 @@ export default function DashboardPage() {
 
             {/* Recommendations */}
             {recs && <DailyRecs recs={recs} />}
+
+            {/* Cycle history */}
+            {profile?.periodDates?.length > 0 && (
+              <CycleHistoryCard dates={profile.periodDates} avgCycleLength={profile.avgCycleLength} />
+            )}
 
             {/* Expert card */}
             <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5">
@@ -120,7 +156,58 @@ export default function DashboardPage() {
           </main>
         )}
       </div>
+
+      <LogModal
+        isOpen={logOpen}
+        onClose={() => setLogOpen(false)}
+        onSave={() => { setLogOpen(false); loadData(); }}
+      />
     </PleaseSignIn>
+  );
+}
+
+// ── Cycle history card ────────────────────────────────────────────────────────
+
+function CycleHistoryCard({ dates, avgCycleLength }: { dates: string[]; avgCycleLength: string }) {
+  const sortedAsc = [...dates].sort();
+  const recent = [...sortedAsc].reverse().slice(0, 5);
+
+  let avgDays = parseInt(avgCycleLength) || 28;
+  if (sortedAsc.length >= 2) {
+    const diffs: number[] = [];
+    for (let i = 1; i < sortedAsc.length; i++) {
+      diffs.push(differenceInDays(parseISO(sortedAsc[i]), parseISO(sortedAsc[i - 1])));
+    }
+    avgDays = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length);
+  }
+
+  return (
+    <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-bold text-gray-900">Cycle History</h3>
+        <span className="text-xs bg-pink-50 text-pink-600 px-3 py-1 rounded-full font-semibold">
+          Avg {avgDays} days
+        </span>
+      </div>
+      <div className="space-y-2.5">
+        {recent.map((d, i) => (
+          <div key={d} className="flex items-center gap-3">
+            <span className="text-base">🩸</span>
+            <span className="text-sm text-gray-700">{format(parseISO(d), "MMMM d, yyyy")}</span>
+            {i === 0 && (
+              <span className="ml-auto text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full font-medium">
+                Latest
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      {dates.length < 3 && (
+        <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-50">
+          Log 3+ months of data to unlock your period report card.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -146,7 +233,6 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
       </h3>
       <p className="text-pink-100 text-sm mb-5">{label}</p>
 
-      {/* Cycle progress */}
       <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
         <div
           className="bg-white h-2 rounded-full transition-all duration-700"
@@ -171,6 +257,7 @@ function Skeleton() {
         <div className="h-4 w-52 bg-gray-100 rounded-lg" />
       </div>
       <div className="h-36 bg-gray-200 rounded-3xl" />
+      <div className="h-14 bg-gray-200 rounded-2xl" />
       <div className="h-48 bg-gray-200 rounded-3xl" />
       <div className="h-80 bg-gray-200 rounded-2xl" />
     </div>

@@ -11,11 +11,34 @@ export interface DailyRecommendation {
   pcosTip?: string;
 }
 
+const expertTipPool: Record<Phase, string[]> = {
+  Menstrual: [
+    "Your period is not a test of willpower. If you're not hitting your PR, don't feel guilty — your body demands extra care right now. Respect what it's telling you.",
+    "Rest doesn't mean doing nothing. Light movement, a warm bath, or a calming habit you love are all valid. Listen to what your body actually needs today.",
+    "Iron loss during your period is real. Pair iron-rich meals with Vitamin C — like lemon juice over spinach — to absorb up to 3x more.",
+  ],
+  Follicular: [
+    "Higher estrogen can suppress appetite, but your body needs fuel to build strength. Don't accidentally under-fuel your best training phase — eat to match your effort.",
+    "This is your strongest recovery phase. If you pushed hard in a session, your body adapts faster now — use that to build fitness you'll maintain through luteal.",
+    "New habits stick better when started in the follicular phase. Your dopamine sensitivity is higher — use that momentum to build something that lasts.",
+  ],
+  Ovulatory: [
+    "This phase is only 3–4 days. Women often miss the ideal window for testing maxes by not tracking it. Know when it's coming and plan your peak sessions around it.",
+    "Your pain tolerance is highest during ovulation — great for a hard workout, but also easiest to overtrain. Warm up properly and listen to your joints.",
+    "Peak estrogen means peak verbal fluency and confidence. Schedule the difficult conversation, the pitch, or the performance — your brain is wired for it right now.",
+  ],
+  Luteal: [
+    "Your increased appetite in the luteal phase is metabolic, not a lack of willpower. Your body burns more calories at rest — feed it properly and PMS symptoms improve dramatically.",
+    "Cutting calories during PMS week backfires every time. Give your body nutrient-dense food and your mood, sleep, and training will all improve.",
+    "Progesterone raises your core temperature slightly this phase. You may feel warmer during workouts and need more recovery time — that's biology, not weakness.",
+  ],
+};
+
 export function getRecommendations(
   status: CycleStatus,
   profile: any
 ): DailyRecommendation {
-  const { currentPhase } = status;
+  const { currentPhase, dayOfCycle } = status;
   const goals: string[] = profile?.goals ?? [];
   const conditions: string[] = profile?.conditions ?? [];
   const hasPCOS = conditions.includes("PCOS") || conditions.includes("PCOD");
@@ -23,6 +46,8 @@ export function getRecommendations(
   const wantsFatLoss = goals.includes("Fat Loss");
 
   const recs = baseRecs(currentPhase);
+  const pool = expertTipPool[currentPhase];
+  recs.expertTip = pool[dayOfCycle % pool.length];
 
   applyPCOS(recs, currentPhase, hasPCOS);
   applyGoals(recs, currentPhase, wantsMusclGain, wantsFatLoss);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { doc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
@@ -54,6 +54,7 @@ export default function LogModal({ isOpen, onClose, onSave }: LogModalProps) {
       if (periodStarted) {
         await updateDoc(doc(db, "users", user.uid), {
           "profile.lastPeriodStart": date,
+          "profile.periodDates": arrayUnion(date),
         });
       }
 
