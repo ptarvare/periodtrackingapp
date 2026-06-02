@@ -80,11 +80,11 @@ export default function DashboardPage() {
             {/* ── Next period hero card ── */}
             {status && <NextPeriodCard status={status} />}
 
-            {/* ── Period confirmation prompt ── */}
-            {status?.periodConfirmationNeeded && !periodDismissed && (
-              <PeriodConfirmationCard
+            {/* ── Subtle period nudge — only when predicted today or 1 day late ── */}
+            {status?.periodConfirmationNeeded && status.daysLate <= 1 && !periodDismissed && (
+              <PeriodNudge
                 daysLate={status.daysLate}
-                onConfirm={() => { setLogWithPeriod(true); setLogOpen(true); }}
+                onLog={() => { setLogWithPeriod(true); setLogOpen(true); }}
                 onDismiss={() => setPeriodDismissed(true)}
               />
             )}
@@ -223,42 +223,30 @@ function CycleHistoryCard({ dates, avgCycleLength }: { dates: string[]; avgCycle
   );
 }
 
-// ── Period confirmation card ──────────────────────────────────────────────────
+// ── Period nudge — slim, warm, only for daysLate 0 or 1 ─────────────────────
 
-function PeriodConfirmationCard({ daysLate, onConfirm, onDismiss }: {
+function PeriodNudge({ daysLate, onLog, onDismiss }: {
   daysLate: number;
-  onConfirm: () => void;
+  onLog: () => void;
   onDismiss: () => void;
 }) {
-  const message = daysLate === 0
-    ? "Your period is predicted for today. Let us know so we can update your cycle."
-    : daysLate === 1
-    ? "Your period is 1 day late — this can be completely normal."
-    : `Your period is ${daysLate} days late — this is normal and happens to everyone.`;
+  const text = daysLate === 0
+    ? "Your period is predicted to start today — has it?"
+    : "Your period may have started — have you logged it?";
 
   return (
-    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5">
-      <div className="flex items-start gap-3 mb-4">
-        <span className="text-2xl shrink-0">🩸</span>
-        <div>
-          <p className="text-sm font-bold text-rose-900">Has your period started?</p>
-          <p className="text-xs text-rose-600 mt-1 leading-relaxed">{message}</p>
-        </div>
-      </div>
-      <div className="flex gap-3">
-        <button
-          onClick={onConfirm}
-          className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl text-sm font-semibold hover:bg-rose-600 transition-colors"
-        >
-          Yes, it started
-        </button>
-        <button
-          onClick={onDismiss}
-          className="flex-1 py-2.5 bg-white text-rose-700 border border-rose-200 rounded-xl text-sm font-semibold hover:bg-rose-50 transition-colors"
-        >
-          Not yet
-        </button>
-      </div>
+    <div className="flex items-center gap-3 px-4 py-3.5 bg-rose-50 border border-rose-100 rounded-2xl">
+      <span className="text-base shrink-0">🩸</span>
+      <p className="text-sm text-rose-800 flex-1 leading-snug">{text}</p>
+      <button
+        onClick={onLog}
+        className="shrink-0 px-3 py-1.5 bg-rose-500 text-white text-xs font-semibold rounded-lg hover:bg-rose-600 transition-colors"
+      >
+        Log it
+      </button>
+      <button onClick={onDismiss} className="shrink-0 text-rose-300 hover:text-rose-400 text-lg leading-none transition-colors">
+        ×
+      </button>
     </div>
   );
 }
@@ -270,12 +258,10 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
   const progress = Math.min(100, Math.round((dayOfCycle / cycleLength) * 100));
 
   let label: string;
-  if (periodConfirmationNeeded) {
-    label = daysLate === 0
-      ? "Period may start today"
-      : daysLate === 1
-      ? "Period is 1 day late — this is normal"
-      : `Period is ${daysLate} days late — this is normal`;
+  if (periodConfirmationNeeded && daysLate <= 1) {
+    label = daysLate === 0 ? "Period may start today" : "Period may have started — log it when ready";
+  } else if (periodConfirmationNeeded) {
+    label = "Log your period when it starts to keep predictions accurate";
   } else {
     label = daysUntilNextPeriod === 1
       ? "Your period starts tomorrow"

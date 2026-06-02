@@ -146,7 +146,7 @@ function ViewProfile({
 }) {
   return (
     <main className="max-w-lg mx-auto px-4 pt-6 space-y-4">
-      {/* Avatar + name */}
+      {/* Avatar + name — no edit button here */}
       <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-6 flex items-center gap-4">
         {photoURL ? (
           <img src={photoURL} alt="" className="w-16 h-16 rounded-2xl object-cover ring-2 ring-pink-200" />
@@ -159,17 +159,19 @@ function ViewProfile({
           <h1 className="text-xl font-bold text-gray-900 truncate">{name || "Your Name"}</h1>
           <p className="text-sm text-gray-400 mt-0.5 truncate">{email}</p>
         </div>
-        <button
-          onClick={onEdit}
-          className="shrink-0 px-4 py-2 rounded-xl bg-pink-50 text-pink-600 text-sm font-semibold border border-pink-100 hover:bg-pink-100 transition-colors"
-        >
-          Edit
-        </button>
       </div>
 
-      {/* Details card */}
+      {/* Details card with Edit */}
       <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Your Details</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Details</h2>
+          <button
+            onClick={onEdit}
+            className="text-xs font-semibold text-pink-500 hover:text-pink-700 transition-colors"
+          >
+            Edit
+          </button>
+        </div>
         <div className="space-y-3">
           {[
             { label: "Age",           value: age ? `${age} years` : "—",         emoji: "🎂" },
@@ -192,12 +194,20 @@ function ViewProfile({
       {/* Period history */}
       <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Period History</h2>
-          {totalDates > 0 && (
-            <span className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full font-semibold">
-              {totalDates} {totalDates === 1 ? "cycle" : "cycles"} tracked
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Period History</h2>
+            {totalDates > 0 && (
+              <span className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full font-semibold">
+                {totalDates} {totalDates === 1 ? "cycle" : "cycles"}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onEdit}
+            className="text-xs font-semibold text-pink-500 hover:text-pink-700 transition-colors"
+          >
+            Edit
+          </button>
         </div>
 
         {recentDates.length === 0 ? (
