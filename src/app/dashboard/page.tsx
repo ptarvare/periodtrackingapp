@@ -150,12 +150,12 @@ export default function DashboardPage() {
                     Strength coach and gut health practitioner with 6+ years of experience. She combines evidence-based training with nutritional strategies that support your hormones and microbiome.
                   </p>
                   <a
-                    href="https://www.instagram.com/fit_coach_priya"
+                    href="https://www.instagram.com/fit_coach__priya"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
                   >
-                    <span>📸</span> @fit_coach_priya
+                    <span>📸</span> @fit_coach__priya
                   </a>
                 </div>
               </div>
