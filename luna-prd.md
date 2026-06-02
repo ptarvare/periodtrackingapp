@@ -1,6 +1,6 @@
 # Luna — Product Requirements Document
 
-**Version:** 2.1  
+**Version:** 3.0  
 **Last Updated:** 2026-06-02  
 **Author:** Pooja Tarvare  
 
@@ -25,9 +25,9 @@ The goal is not just tracking. It is making users feel **productive in every pha
 
 ## 3. Core Principle
 
-Everything in Luna is **phase-based and personalized**. The app predicts which phase the user is in and delivers all recommendations — food, exercise, mood, insights — based on that phase. The whole experience should feel like their own app, not a generic wellness tool.
+Everything in Luna is **phase-based and personalized**. The whole experience should feel like their own app, not a generic wellness tool.
 
-**Retention strategy:** Daily logging → phase-end reports → personalized insights that change every day → users feel understood and keep coming back.
+**Retention flywheel:** Daily logging → phase-end reports → personalized insights that change every day → users feel understood → they come back.
 
 ---
 
@@ -54,11 +54,11 @@ Landing page
    ↓
 Google Sign-In
    ↓
-Onboarding (2 steps: age/height/weight/goals → last period date/cycle length)
+Onboarding (2 steps: personal details → last period date + cycle length)
    ↓
-Dashboard (current phase + daily insight + food recs + log check-in)
+Dashboard (phase card + daily insight + food recs + log check-in)
    ↓
-Daily: Log mood/symptoms → PO-style warm response
+Daily: Log mood/symptoms → warm response
    ↓
 Phase ends: Phase-end report appears in Report tab
 ```
@@ -67,148 +67,163 @@ Phase ends: Phase-end report appears in Report tab
 
 ## 6. Navigation
 
-**Bottom nav (mobile) / Top nav (desktop):**
-
 | Tab | Route | Description |
 |---|---|---|
 | 🏠 Home | `/dashboard` | Phase overview, daily insight, food recs, expert card |
-| 📋 Log | `/log` (or modal) | Daily mood logging with phase-specific chips |
+| 📋 Log | `/log` | Daily mood logging with phase-specific chips |
 | 📊 Report | `/report` | Daily log history + phase-end report cards |
 | 👤 Profile | `/profile` | View profile + Edit |
 
 ---
 
-## 7. Features
+---
 
-### 7.1 Phase Prediction Engine ✅
+# Phase 1 — MVP (Shipped)
+
+**Goal:** Get the core loop working and share with close friends. Phase-based food and exercise guidance, basic cycle prediction, mobile-ready.
+
+## Features Shipped in Phase 1
+
+### P1.1 — Phase Prediction Engine ✅
 - Calculates current phase from last period date + cycle length
 - 4 phases: Menstrual, Follicular, Ovulatory, Luteal
-- Confidence score based on data points
+- Confidence score based on number of logged period dates
 - PCOS/PCOD flag adjusts confidence
 
-### 7.2 Period Confirmation — Never Assume ✅
-**The problem:** When the predicted period date arrives, the app was assuming the period started and showing "Menstrual phase." This is wrong — the period may be late.
+### P1.2 — Phase-Based Recommendations ✅
+- Food, Exercise, Supplements, Lifestyle tabs per phase
+- Expert tips from Priya Tarvare (Certified PT + Nutrition Practitioner)
+- PCOS and goal modifiers (muscle gain, fat loss)
 
-**The fix:**
-- Phase always stays **Luteal** until the user confirms their period started
-- A slim, warm nudge banner appears **only when period is predicted for today or 1 day late**
-- Nudge says: *"Your period is predicted to start today — has it?"* with a small "Log it" button and × to dismiss
-- Tapping "Log it" opens the log modal with the period toggle pre-checked
-- For **2+ days late**: no nudge shown — just Luteal quietly with a neutral message on the prediction card. User logs when ready
-- Dismissing hides the nudge for that session — shows again next app open
+### P1.3 — Onboarding ✅
+- Step 1: Name, age, height, weight, goals, conditions
+- Step 2: Last period date, cycle length, period duration
 
-**States:**
-| Situation | What to show |
-|---|---|
-| Period predicted today (daysLate = 0) | Slim nudge: "Your period is predicted to start today — has it?" |
-| 1 day late (daysLate = 1) | Slim nudge: "Your period may have started — have you logged it?" |
-| 2+ days late | No nudge. Show Luteal + neutral prediction card message |
-| Period confirmed (logged) | Menstrual phase, Day X |
+### P1.4 — Google Sign-In + Auth ✅
+- Google popup sign-in with Safari fallback
+- Redirect authenticated users directly to dashboard
+- Persistent session
 
-### 7.3 Daily Insights — Rotating Pool ✅
-- **80 unique insights total — 20 per phase**
-- Rotate by day-of-cycle so the insight changes every day
-- Repeats only after ~30 days — user won't remember, creates daily open habit
-- Science-backed, specific, actionable — covers food, exercise, hormones, sleep, productivity, emotional health
-- **Goal:** New insight every day = a reason to open the app
+### P1.5 — Mobile-First Design ✅
+- Pink/purple gradient theme
+- Bottom nav bar, phase card gradients, tabbed recs
 
-### 7.4 Food Recommendations — Breakfast / Lunch / Dinner ✅
-- Structured as three meal cards: Breakfast, Lunch, Dinner
+### P1.6 — PWA Support ✅
+- Installable on iPhone and Android from browser
+
+### P1.7 — PostHog Analytics ✅
+- Tracks: sign-ins, onboarding completion, dashboard views, tab clicks
+
+### P1.8 — Edit Profile ✅
+- Edit personal details, cycle length, period dates
+
+---
+
+---
+
+# Phase 2 — Depth + Personalization (Current)
+
+**Goal:** Make the app feel deeply personal. Every day should show something new. The food, insights, and period tracking should feel like Luna knows you.
+
+## Features in Phase 2
+
+### P2.1 — Period Confirmation — Never Assume ✅
+- Phase stays **Luteal** until user logs their period
+- Slim warm nudge shown **only for daysLate = 0 or 1**:
+  - *"Your period is predicted to start today — has it?"*
+  - *"Your period may have started — have you logged it?"*
+- Tapping "Log it" opens log modal with period toggle pre-checked
+- For **2+ days late**: no nudge — just Luteal quietly, neutral prediction card message
+- Dismissing hides the nudge for that session
+
+### P2.2 — Food Recs: Breakfast / Lunch / Dinner ✅
+- Three meal cards per phase: Breakfast, Lunch, Dinner
 - Format: nutritional goal + example foods in brackets
-- Example: "Iron + complex carbs (oats with raisins and flaxseeds, squeeze of lemon)"
-- Phase-based only — same meals for all days within a phase
-- Goal/condition-specific notes shown below the meal cards
-- Avoid section shown at the bottom of the food tab
+- Phase-based only (same meals for all days within a phase)
+- Goal/condition-specific notes appear below meal cards
+- Avoid section at bottom of food tab
 
-### 7.5 Daily Log — Mood + Symptoms + Energy ✅ (upgrade planned)
-**Current state:** Modal with energy level, mood chips (generic), symptoms, period toggle. Saves to `users/{uid}/logs/{date}`.
+### P2.3 — 80 Unique Rotating Insights ✅
+- 20 science-backed insights per phase (80 total)
+- Rotates by day-of-cycle — new insight every day
+- Repeats only after ~30 days
+- Covers: food, exercise, hormones, sleep, productivity, emotional health
 
-**Planned upgrade:**
-- Phase-specific mood chips (options tailored to what that phase actually feels like):
+### P2.4 — Daily Log Check-In ✅
+- Dashboard button: "How are you feeling today?" / "Logged today ✅"
+- Opens LogModal: energy, mood chips, symptoms, period toggle
+- Saves to `users/{uid}/logs/{date}`
+- When period logged: appends to `profile.periodDates` via arrayUnion
+
+### P2.5 — Cycle History Card ✅
+- Shows last 5 period start dates on dashboard
+- Calculates and displays average cycle length from logged dates
+
+### P2.6 — Landing Page Redesign ✅
+- Hero: *"Your body has a rhythm. Plan your life around it."*
+- Sub-copy focused on staying productive every day of the cycle
+- Feature cards: Know your phase / Eat for your cycle / Discover your patterns
+- Badge: *"Built for your rhythm"*
+
+### P2.7 — Profile Page Redesign ✅
+- Default view: avatar + name + email, Your Details rows, Period History list
+- Edit button lives in section headers (not in the avatar card)
+- Edit mode: inline form, Cancel + Save
+
+### P2.8 — Expert Card Fix ✅
+- Priya's Instagram corrected to [@fit_coach__priya](https://www.instagram.com/fit_coach__priya) (double underscore)
+
+---
+
+---
+
+# Phase 3 — Daily Habit + Report Loop (Upcoming)
+
+**Goal:** Close the retention loop. Give users a reason to open the app every day and feel rewarded for doing so. The log and report features make Luna feel like it's building a picture of *them* over time.
+
+## Planned Features in Phase 3
+
+### P3.1 — Log Tab: Phase-Specific Mood Chips 🔲
+- New bottom nav tab dedicated to daily logging
+- Mood chips change based on current phase:
   - Menstrual: Crampy, Fatigued, Emotional, Low energy, Calm
   - Follicular: Motivated, Clear-headed, Restless, Happy, Tired
   - Ovulatory: Confident, Social, Energetic, Focused, Overwhelmed
   - Luteal: Irritable, Anxious, Bloated, Foggy, Weepy
-- Optional free-text note below the chips
-- After saving: warm 1–2 line PO-style response (static, handcrafted — not AI-generated per save)
+- Optional free-text note below chips
+- After saving: warm 1–2 line PO-style response (static, handcrafted)
 
-### 7.6 Report Tab 🔲 (building next)
-**A building personal profile — not a popup.**
-
+### P3.2 — Report Tab: Phase-End Report Cards 🔲
 - Dedicated tab in bottom nav
 - Shows "Your [phase] report is ready" when phase changes
-- **Daily view:** Running log — mood, energy, symptoms per day
+- **Daily view:** Running log of mood, energy, symptoms per day
 - **Phase-end report card:** Generated when phase changes
   - Days logged, most common mood, energy patterns
-  - Tone: empowering and productivity-focused
+  - Tone: empowering + productivity-focused
   - Example: *"Your Follicular phase — you felt energised 5 of 7 days. This is your high-performance window. Schedule your big decisions here next cycle."*
-  - Example: *"Your Menstrual phase showed fatigue on days 1–3. Plan lighter tasks those days next cycle."*
-- Over time becomes the user's **personal performance map**
+  - Over time becomes the user's personal performance map
 
-### 7.7 Landing Page ✅
-- Hero: *"Your body has a rhythm. Plan your life around it."*
-- Sub-copy: *"Luna helps you understand your cycle so you can stay on top of your game — every single day."*
-- Badge: *"Built for your rhythm"*
-- Feature cards: Know your phase / Eat for your cycle / Discover your patterns
-- Chat feature card removed (deferred)
-
-### 7.8 Profile Page ✅
-- Default view: avatar card (photo + name + email), Your Details section, Period History section
-- **Edit button** lives in the section headers ("Your Details" and "Period History") — not in the avatar card
-- Edit mode: inline form for all fields, Cancel + Save buttons
-- Period dates: add/remove from full list in edit mode
-
-### 7.9 PWA Support ✅
-Installable on iPhone and Android.
-
-### 7.10 PostHog Analytics ✅
-Tracks: sign-ins, onboarding completion, dashboard views, tab clicks.
-
-### 7.11 Expert Card ✅
-- **Priya Tarvare** — Certified Personal Trainer & Integrative Nutrition Practitioner
-- Instagram: [@fit_coach__priya](https://www.instagram.com/fit_coach__priya) (double underscore)
-- Phase-specific tips from Priya rotate daily in the recommendations
+### P3.3 — Nav Restructure: 4 Tabs 🔲
+- Add Log and Report tabs to bottom nav
+- Final structure: 🏠 Home · 📋 Log · 📊 Report · 👤 Profile
 
 ---
 
-## 8. Build Order
-
-| # | Feature | Status |
-|---|---|---|
-| 0 | Commit existing work (log check-in, cycle history, rotating tips) | ✅ Done |
-| 0.5 | Period confirmation — slim nudge, Luteal until confirmed | ✅ Done |
-| 1 | Landing page — mission-driven copy | ✅ Done |
-| 2 | Food recs: Breakfast / Lunch / Dinner | ✅ Done |
-| 3 | 80 unique insights (20 per phase), daily rotation | ✅ Done |
-| 3.5 | Profile redesign: view mode + Edit in section headers | ✅ Done |
-| 4 | Log tab: phase-specific mood chips + PO warm response | 🔲 Next |
-| 5 | Report tab: daily history + phase-end report cards | 🔲 |
-| 6 | Nav restructure: 4 tabs (Home, Log, Report, Profile) | 🔲 |
-
 ---
 
-## 9. Out of Scope (for now)
-
-- PO companion app (separate product — PRD in `po-prd.md`)
-- Push notifications
-- AI-generated insights per save (using static curated pool instead)
-- Music / media playback
-- Paid tier
-
----
-
-## 10. Key Decisions Made
+## Key Decisions Log
 
 | Decision | Why |
 |---|---|
 | Period = confirmation, not assumption | App never assumes period started; always shows Luteal until logged |
-| Nudge only for daysLate 0–1 | Showing "X days late" for 2+ days feels alarming — just show Luteal quietly |
-| No Yes/No binary on the nudge | Forced choice feels clinical; a soft "Log it" tap is more personal |
-| Phase-specific mood chips | Options match what each phase actually feels like — not a generic list |
-| PO warm responses: static, not AI | Lower cost, still warm; avoids API call on every log save |
-| Report tab, not a popup | Phase-end report lives in a dedicated tab — user goes there when ready |
-| Insights repeat after ~30 days | Pool of 20 per phase; user won't remember, creates daily open habit |
-| Food by meal (not flat list) | Breakfast / Lunch / Dinner with examples — practical, not abstract |
-| Edit in section headers, not avatar | Cleaner profile view; Edit is contextual to what you're editing |
-| PRD updated before every build | Alignment in PRD first, then code — no surprises |
+| Nudge only for daysLate 0–1 | "X days late" for 2+ days feels alarming — Luteal quietly is better |
+| No Yes/No binary on the nudge | Forced choice feels clinical; soft "Log it" is more personal |
+| Phase-specific mood chips | Options match what each phase actually feels like |
+| PO warm responses: static, not AI | Lower cost per log save, still feels warm |
+| Report tab, not a popup | Phase-end report lives in a dedicated tab — user goes when ready |
+| Insights pool of 20 per phase | Repeats after ~30 days; user won't remember; creates daily habit |
+| Food by meal (not flat list) | Breakfast / Lunch / Dinner is practical and actionable |
+| Edit in section headers, not avatar | Cleaner profile view; Edit is contextual |
+| PRD updated before every build | Alignment first, code second |
 | GitHub committed after every feature | Nothing left hanging |
+| Phase 1 / Phase 2 / Phase 3 structure | Shows progression clearly; each phase has a focused goal |
