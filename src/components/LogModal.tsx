@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { doc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -23,12 +23,17 @@ interface LogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
+  defaultPeriodStarted?: boolean;
 }
 
-export default function LogModal({ isOpen, onClose, onSave }: LogModalProps) {
+export default function LogModal({ isOpen, onClose, onSave, defaultPeriodStarted }: LogModalProps) {
   const { user } = useAuth();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [periodStarted, setPeriodStarted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setPeriodStarted(defaultPeriodStarted ?? false);
+  }, [isOpen, defaultPeriodStarted]);
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [mood, setMood] = useState("");
   const [energy, setEnergy] = useState("");

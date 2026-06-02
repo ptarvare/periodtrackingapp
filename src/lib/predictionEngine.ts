@@ -11,6 +11,8 @@ export interface CycleStatus {
   nextPeriodDate: Date;
   ovulationDate: Date;
   isPeriodDue: boolean;
+  periodConfirmationNeeded: boolean;
+  daysLate: number;
   confidenceScore: number;
   dataPoints: number;
 }
@@ -24,6 +26,8 @@ const UNKNOWN_STATUS: CycleStatus = {
   nextPeriodDate: addDays(new Date(), 28),
   ovulationDate: addDays(new Date(), 14),
   isPeriodDue: false,
+  periodConfirmationNeeded: false,
+  daysLate: 0,
   confidenceScore: 0,
   dataPoints: 0,
 };
@@ -94,12 +98,34 @@ export function calculateCycleStatus(profile: any): CycleStatus {
 
   if (daysSinceStart > cycleLen * 3) confidence -= 10;
 
-  const dayOfCycle = (daysSinceStart % cycleLen) + 1;
   const ovulationDay = cycleLen - 14;
-  const cyclesPassed = Math.floor(daysSinceStart / cycleLen);
-  const nextPeriodDate = addDays(start, (cyclesPassed + 1) * cycleLen);
-  const daysUntilNextPeriod = differenceInDays(nextPeriodDate, today);
-  const ovulationDate = addDays(nextPeriodDate, -14);
+  const predictedNextPeriodDate = addDays(start, cycleLen);
+
+  // Positive = period is overdue by that many days; 0 = predicted to start today
+  const daysLate = differenceInDays(today, predictedNextPeriodDate);
+
+  // Period predicted but user hasn't confirmed it started — don't assume Menstrual
+  if (daysLate >= 0) {
+    return {
+      currentPhase: "Luteal",
+      dayOfCycle: cycleLen + daysLate,
+      cycleLength: cycleLen,
+      phaseDay: (cycleLen - ovulationDay - 1) + daysLate + 1,
+      daysUntilNextPeriod: -daysLate,
+      nextPeriodDate: predictedNextPeriodDate,
+      ovulationDate: addDays(predictedNextPeriodDate, -14),
+      isPeriodDue: true,
+      periodConfirmationNeeded: true,
+      daysLate,
+      confidenceScore: clamp(confidence, 0, 100),
+      dataPoints: rawDates.length,
+    };
+  }
+
+  // Within current cycle (period confirmed, not yet due)
+  const dayOfCycle = daysSinceStart + 1;
+  const daysUntilNextPeriod = -daysLate; // daysLate is negative here, so this is positive
+  const ovulationDate = addDays(start, ovulationDay);
 
   let phase: Phase;
   let phaseDay: number;
@@ -124,9 +150,11 @@ export function calculateCycleStatus(profile: any): CycleStatus {
     cycleLength: cycleLen,
     phaseDay,
     daysUntilNextPeriod,
-    nextPeriodDate,
+    nextPeriodDate: predictedNextPeriodDate,
     ovulationDate,
-    isPeriodDue: daysUntilNextPeriod <= 0,
+    isPeriodDue: false,
+    periodConfirmationNeeded: false,
+    daysLate: 0,
     confidenceScore: clamp(confidence, 0, 100),
     dataPoints: rawDates.length,
   };
