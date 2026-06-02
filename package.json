@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.96.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.9.0",
+    "html2canvas": "^1.4.1",
     "next": "16.1.6",
     "posthog-js": "^1.374.0",
     "react": "19.2.3",
@@ -25,6 +26,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

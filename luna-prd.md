@@ -196,12 +196,52 @@ Phase ends: Phase-end report appears in Report tab
 - Shows "Logged today ✓" badge if already logged; becomes "Update Log" on re-save
 - Saves to `users/{uid}/logs/{date}`
 
-### P3.2 — Report Tab ✅
-- Dedicated `/report` page in bottom nav
-- **Phase report card:** Shows current phase, day X of phase, what this phase means for productivity, what's coming next — always visible once 3+ logs exist
-- **Patterns summary:** Days logged, top mood, top energy level
-- **Log history feed:** Last 30 entries — date, moods, energy, symptoms, note snippet
-- Unlock message shown when < 3 logs: "Log 3 days to unlock your report"
+### P3.2 — Report Tab ✅ (v1 built, v2 rebuilding)
+**v1 (current):** Basic phase card, patterns summary (days logged / top mood / top energy), log history feed.
+
+**v2 (building now):** Full report redesign based on competitive research. Luna's differentiator is being phase-based (not cycle-based) and productivity-framed.
+
+**Sections:**
+
+**1. Phase Report Card**
+- Current phase + day X of phase
+- Days logged this phase / total phase days
+- Top mood + top energy logged
+- Productivity framing — 3 operating modes for this phase:
+  - 🔥 High output days: what to schedule
+  - ⚡ Moderate days: what works well
+  - 🌙 Rest days: what to avoid or reduce
+- Share button → opens shareable Wrapped-style card
+
+**2. Energy Heatmap** (unique to Luna — no other period app has this)
+- GitHub-style contribution grid
+- Rows = past cycles (up to last 6)
+- Columns = day of cycle (1 → cycle length)
+- Cell colour = energy logged:
+  - Not logged → `gray-100`
+  - Very Low → rose-200
+  - Low → pink-300
+  - Medium → pink-500
+  - High → purple-600
+- Phase boundary markers above columns (Menstrual / Follicular / Ovulatory / Luteal)
+- Shows your personal peak days at a glance across multiple cycles
+
+**3. Patterns Summary**
+- Days logged, top mood, top energy — shown once 3+ logs exist
+
+**4. Log History Feed**
+- Last 30 entries — date, moods, energy, symptoms, note snippet
+
+**5. Shareable Phase Wrapped Card** (Spotify Wrapped style)
+- Full gradient card: phase colour
+- Phase emoji + "Your [Phase] Phase — Wrapped"
+- Key stats: days logged, top mood, top energy
+- One insight line
+- Luna 🌙 branding + URL
+- Download as image button (html2canvas)
+- Mobile: long-press to save natively
+
+**Unlock flow:** Any logs → show history feed. 3+ logs → unlock patterns + phase card. 2+ period dates → unlock heatmap.
 
 ### P3.3 — Nav Restructure: 4 Tabs ✅
 - Bottom nav: 🏠 Home · 📋 Log · 📊 Report · 👤 Profile
