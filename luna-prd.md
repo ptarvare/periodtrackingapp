@@ -183,29 +183,29 @@ Phase ends: Phase-end report appears in Report tab
 
 ## Planned Features in Phase 3
 
-### P3.1 — Log Tab: Phase-Specific Mood Chips 🔲
-- New bottom nav tab dedicated to daily logging
+### P3.1 — Log Tab: Phase-Specific Mood Chips ✅
+- Dedicated `/log` page in bottom nav
 - Mood chips change based on current phase:
-  - Menstrual: Crampy, Fatigued, Emotional, Low energy, Calm
-  - Follicular: Motivated, Clear-headed, Restless, Happy, Tired
-  - Ovulatory: Confident, Social, Energetic, Focused, Overwhelmed
-  - Luteal: Irritable, Anxious, Bloated, Foggy, Weepy
-- Optional free-text note below chips
-- After saving: warm 1–2 line PO-style response (static, handcrafted)
+  - Menstrual: Crampy, Fatigued, Emotional, Low energy, Calm, Bloated
+  - Follicular: Motivated, Clear-headed, Happy, Restless, Tired, Energetic
+  - Ovulatory: Confident, Social, Energetic, Focused, Overwhelmed, Creative
+  - Luteal: Irritable, Anxious, Bloated, Foggy, Weepy, Calm
+- Multi-select moods (not single select)
+- Energy level, symptoms, optional free-text note, period toggle
+- After saving: warm 1–2 line PO-style response (5 per phase, static, rotates by dayOfCycle)
+- Shows "Logged today ✓" badge if already logged; becomes "Update Log" on re-save
+- Saves to `users/{uid}/logs/{date}`
 
-### P3.2 — Report Tab: Phase-End Report Cards 🔲
-- Dedicated tab in bottom nav
-- Shows "Your [phase] report is ready" when phase changes
-- **Daily view:** Running log of mood, energy, symptoms per day
-- **Phase-end report card:** Generated when phase changes
-  - Days logged, most common mood, energy patterns
-  - Tone: empowering + productivity-focused
-  - Example: *"Your Follicular phase — you felt energised 5 of 7 days. This is your high-performance window. Schedule your big decisions here next cycle."*
-  - Over time becomes the user's personal performance map
+### P3.2 — Report Tab ✅
+- Dedicated `/report` page in bottom nav
+- **Phase report card:** Shows current phase, day X of phase, what this phase means for productivity, what's coming next — always visible once 3+ logs exist
+- **Patterns summary:** Days logged, top mood, top energy level
+- **Log history feed:** Last 30 entries — date, moods, energy, symptoms, note snippet
+- Unlock message shown when < 3 logs: "Log 3 days to unlock your report"
 
-### P3.3 — Nav Restructure: 4 Tabs 🔲
-- Add Log and Report tabs to bottom nav
-- Final structure: 🏠 Home · 📋 Log · 📊 Report · 👤 Profile
+### P3.3 — Nav Restructure: 4 Tabs ✅
+- Bottom nav: 🏠 Home · 📋 Log · 📊 Report · 👤 Profile
+- Desktop nav updated to match
 
 ---
 

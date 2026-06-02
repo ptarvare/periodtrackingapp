@@ -26,7 +26,9 @@ export default function Nav() {
           {/* Desktop nav links */}
           <nav className="hidden sm:flex items-center gap-1">
             <NavLink href="/dashboard" active={pathname === "/dashboard"}>🏠 Home</NavLink>
-            <NavLink href="/profile" active={pathname === "/profile"}>✏️ Edit Profile</NavLink>
+            <NavLink href="/log" active={pathname === "/log"}>📋 Log</NavLink>
+            <NavLink href="/report" active={pathname === "/report"}>📊 Report</NavLink>
+            <NavLink href="/profile" active={pathname === "/profile"}>👤 Profile</NavLink>
           </nav>
 
           {/* Avatar */}
@@ -44,9 +46,11 @@ export default function Nav() {
 
       {/* ── Mobile bottom tab bar ── */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-pink-100 z-50 sm:hidden">
-        <div className="flex items-center justify-around h-16 px-6">
+        <div className="flex items-center justify-around h-16 px-2">
           <BottomTab href="/dashboard" active={pathname === "/dashboard"} emoji="🏠" label="Home" />
-          <BottomTab href="/profile" active={pathname === "/profile"} emoji="✏️" label="Profile" />
+          <BottomTab href="/log" active={pathname === "/log"} emoji="📋" label="Log" />
+          <BottomTab href="/report" active={pathname === "/report"} emoji="📊" label="Report" />
+          <BottomTab href="/profile" active={pathname === "/profile"} emoji="👤" label="Profile" />
         </div>
       </nav>
     </>
