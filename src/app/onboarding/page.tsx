@@ -71,7 +71,8 @@ export default function OnboardingPage() {
     const [periodDuration, setPeriodDuration] = useState(5);
     const [avgCycleLength, setAvgCycleLength] = useState("28");
 
-    const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+    const [selectedGoal, setSelectedGoal] = useState<string>("");
+    const [customGoal, setCustomGoal] = useState("");
     const [loading, setLoading] = useState(false);
 
     const filledSlots = slots.filter((d): d is string => d !== null);
@@ -131,17 +132,11 @@ export default function OnboardingPage() {
         return suggested.toISOString().split("T")[0];
     };
 
-    const toggleGoal = (id: string) => {
-        setSelectedGoals((prev) =>
-            prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-        );
-    };
-
     const handleSubmit = async () => {
         if (!user || filledCount === 0) return;
         setLoading(true);
         const periodDates = slots.filter((d): d is string => d !== null).sort();
-        const goalsToSave = selectedGoals.length > 0 ? selectedGoals : ["know_my_body"];
+        const goalsToSave = selectedGoal ? [selectedGoal] : ["know_my_body"];
         const cycleLengthToSave = autoAvgCycleLength ? String(autoAvgCycleLength) : avgCycleLength;
         try {
             await setDoc(doc(db, "users", user.uid), {
@@ -156,6 +151,7 @@ export default function OnboardingPage() {
                     avgCycleLength: cycleLengthToSave,
                     conditions: [],
                     goals: goalsToSave,
+                    ...(selectedGoal === "something_else" && customGoal ? { customGoal } : {}),
                 },
                 onboardingCompleted: true,
                 createdAt: new Date().toISOString(),
@@ -164,6 +160,7 @@ export default function OnboardingPage() {
                 period_dates_count: filledCount,
                 avg_cycle_length: cycleLengthToSave,
                 goals: goalsToSave,
+                ...(selectedGoal === "something_else" && customGoal ? { custom_goal: customGoal } : {}),
             });
             router.push("/dashboard");
         } catch (error) {
@@ -258,11 +255,11 @@ export default function OnboardingPage() {
 
                             <div className="space-y-3">
                                 {GOALS.map((goal) => {
-                                    const selected = selectedGoals.includes(goal.id);
+                                    const selected = selectedGoal === goal.id;
                                     return (
                                         <button
                                             key={goal.id}
-                                            onClick={() => toggleGoal(goal.id)}
+                                            onClick={() => setSelectedGoal(selected ? "" : goal.id)}
                                             className={`w-full text-left px-4 py-4 rounded-2xl border-2 transition-all duration-200 ${
                                                 selected
                                                     ? "border-pink-500 bg-pink-50 shadow-sm shadow-pink-100"
@@ -279,24 +276,52 @@ export default function OnboardingPage() {
                                                         {goal.description}
                                                     </p>
                                                 </div>
-                                                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                                                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
                                                     selected ? "border-pink-500 bg-pink-500" : "border-gray-300"
-                                                }`}>
-                                                    {selected && (
-                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    )}
-                                                </div>
+                                                }`} />
                                             </div>
                                         </button>
                                     );
                                 })}
+
+                                {/* Something else option */}
+                                <button
+                                    onClick={() => setSelectedGoal(selectedGoal === "something_else" ? "" : "something_else")}
+                                    className={`w-full text-left px-4 py-4 rounded-2xl border-2 transition-all duration-200 ${
+                                        selectedGoal === "something_else"
+                                            ? "border-pink-500 bg-pink-50 shadow-sm shadow-pink-100"
+                                            : "border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50/40"
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">💭</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-semibold text-sm ${selectedGoal === "something_else" ? "text-pink-700" : "text-gray-800"}`}>
+                                                Something else
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5">None of these feel right — tell us what you&apos;re working towards</p>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                                            selectedGoal === "something_else" ? "border-pink-500 bg-pink-500" : "border-gray-300"
+                                        }`} />
+                                    </div>
+                                </button>
+
+                                {selectedGoal === "something_else" && (
+                                    <input
+                                        type="text"
+                                        value={customGoal}
+                                        onChange={(e) => setCustomGoal(e.target.value)}
+                                        placeholder="e.g. manage endometriosis, reduce PMS, understand my hormones..."
+                                        className="w-full px-4 py-3 rounded-xl border border-pink-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 outline-none text-sm"
+                                        autoFocus
+                                    />
+                                )}
                             </div>
 
-                            {selectedGoals.length === 0 && (
+                            {!selectedGoal && (
                                 <p className="text-xs text-gray-400 text-center">
-                                    Not sure? Skip this — we&apos;ll default to &ldquo;Know my body&rdquo; and you can always update it later.
+                                    Not sure? Skip this — we&apos;ll default to &ldquo;Know my body&rdquo; and you can update it anytime.
                                 </p>
                             )}
                         </div>
@@ -308,8 +333,8 @@ export default function OnboardingPage() {
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">One last thing</h1>
                                 <p className="text-gray-500 mt-1.5 leading-relaxed text-sm">
-                                    {selectedGoals.length > 0
-                                        ? `To personalise your ${GOALS.find(g => g.id === selectedGoals[0])?.name.toLowerCase()} plan, we need to know where you are in your cycle.`
+                                    {selectedGoal && selectedGoal !== "something_else"
+                                        ? `To personalise your ${GOALS.find(g => g.id === selectedGoal)?.name.toLowerCase()} plan, we need to know where you are in your cycle.`
                                         : "Tell us when your last period started so we can predict your cycle and know which phase you're in."}
                                 </p>
                             </div>

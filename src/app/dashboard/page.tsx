@@ -224,8 +224,11 @@ export default function DashboardPage() {
         <GoalEditModal
           currentGoals={profile?.goals ?? ["know_my_body"]}
           onClose={() => setGoalEditOpen(false)}
-          onSave={async (goals) => {
-            await updateDoc(doc(db, "users", user.uid), { "profile.goals": goals });
+          onSave={async (goals, customGoal) => {
+            await updateDoc(doc(db, "users", user.uid), {
+              "profile.goals": goals,
+              ...(customGoal ? { "profile.customGoal": customGoal } : {}),
+            });
             setGoalEditOpen(false);
             loadData();
           }}
@@ -341,100 +344,85 @@ function GoalChips({ goals, onEdit }: { goals: string[]; onEdit: () => void }) {
 function GoalEditModal({ currentGoals, onClose, onSave }: {
   currentGoals: string[];
   onClose: () => void;
-  onSave: (goals: string[]) => Promise<void>;
+  onSave: (goals: string[], customGoal?: string) => Promise<void>;
 }) {
-  const [selected, setSelected] = useState<string[]>(currentGoals);
-  const [showWarning, setShowWarning] = useState(false);
+  const [selected, setSelected] = useState<string>(currentGoals[0] ?? "know_my_body");
+  const [customGoal, setCustomGoal] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const toggle = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-    );
-  };
-
-  const handleSave = () => {
-    const changed = JSON.stringify([...selected].sort()) !== JSON.stringify([...currentGoals].sort());
-    if (changed) { setShowWarning(true); return; }
-    onClose();
-  };
 
   const confirmSave = async () => {
     setSaving(true);
-    await onSave(selected.length > 0 ? selected : ["know_my_body"]);
+    await onSave(
+      selected ? [selected] : ["know_my_body"],
+      selected === "something_else" ? customGoal : undefined
+    );
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 space-y-5">
-
-        {!showWarning ? (
-          <>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Update your goals</h2>
-              <p className="text-sm text-gray-500 mt-1">Pick up to 3. Luna adjusts your content to match.</p>
-            </div>
-            <div className="space-y-2.5">
-              {GOALS.map((goal) => {
-                const isSelected = selected.includes(goal.id);
-                return (
-                  <button
-                    key={goal.id}
-                    onClick={() => toggle(goal.id)}
-                    className={`w-full text-left px-4 py-3.5 rounded-2xl border-2 transition-all ${
-                      isSelected
-                        ? "border-pink-500 bg-pink-50"
-                        : "border-gray-200 bg-white hover:border-pink-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{goal.emoji}</span>
-                      <span className={`font-semibold text-sm flex-1 ${isSelected ? "text-pink-700" : "text-gray-800"}`}>
-                        {goal.name}
-                      </span>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isSelected ? "border-pink-500 bg-pink-500" : "border-gray-300"
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-3 pt-1">
-              <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                Cancel
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Update your goal</h2>
+          <p className="text-sm text-gray-500 mt-1">Luna will personalise everything to match.</p>
+        </div>
+        <div className="space-y-2.5">
+          {GOALS.map((goal) => {
+            const isSelected = selected === goal.id;
+            return (
+              <button
+                key={goal.id}
+                onClick={() => setSelected(isSelected ? "" : goal.id)}
+                className={`w-full text-left px-4 py-3.5 rounded-2xl border-2 transition-all ${
+                  isSelected ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{goal.emoji}</span>
+                  <span className={`font-semibold text-sm flex-1 ${isSelected ? "text-pink-700" : "text-gray-800"}`}>
+                    {goal.name}
+                  </span>
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                    isSelected ? "border-pink-500 bg-pink-500" : "border-gray-300"
+                  }`} />
+                </div>
               </button>
-              <button onClick={handleSave} className="flex-1 py-3 rounded-xl bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200">
-                Save
-              </button>
+            );
+          })}
+          <button
+            onClick={() => setSelected(selected === "something_else" ? "" : "something_else")}
+            className={`w-full text-left px-4 py-3.5 rounded-2xl border-2 transition-all ${
+              selected === "something_else" ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">💭</span>
+              <span className={`font-semibold text-sm flex-1 ${selected === "something_else" ? "text-pink-700" : "text-gray-800"}`}>
+                Something else
+              </span>
+              <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                selected === "something_else" ? "border-pink-500 bg-pink-500" : "border-gray-300"
+              }`} />
             </div>
-          </>
-        ) : (
-          <>
-            <div className="text-center space-y-3 py-2">
-              <span className="text-4xl">⚠️</span>
-              <h2 className="text-lg font-bold text-gray-900">Heads up</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Changing your goals affects your report accuracy over time. Switching frequently makes it harder to spot patterns.
-              </p>
-              <p className="text-sm text-gray-500">Are you sure you want to update?</p>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowWarning(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                Go back
-              </button>
-              <button onClick={confirmSave} disabled={saving} className="flex-1 py-3 rounded-xl bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200 disabled:opacity-50">
-                {saving ? "Saving..." : "Yes, update"}
-              </button>
-            </div>
-          </>
-        )}
+          </button>
+          {selected === "something_else" && (
+            <input
+              type="text"
+              value={customGoal}
+              onChange={(e) => setCustomGoal(e.target.value)}
+              placeholder="Tell us what you're working towards..."
+              className="w-full px-4 py-3 rounded-xl border border-pink-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 outline-none text-sm"
+              autoFocus
+            />
+          )}
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={confirmSave} disabled={saving} className="flex-1 py-3 rounded-xl bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200 disabled:opacity-50">
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
       </div>
     </div>
   );
