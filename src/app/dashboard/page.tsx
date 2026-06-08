@@ -3,17 +3,19 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { calculateCycleStatus, CycleStatus } from "@/lib/predictionEngine";
 import { getRecommendations, DailyRecommendation } from "@/lib/recommendationEngine";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { format, differenceInDays, parseISO, isBefore, addDays } from "date-fns";
 import PleaseSignIn from "@/components/PleaseSignIn";
 import { track } from "@/lib/analytics";
 import PhaseCard from "@/components/PhaseCard";
 import DailyRecs from "@/components/DailyRecs";
 import LogModal from "@/components/LogModal";
 import Nav from "@/components/Nav";
+import { getTodaysFocus } from "@/lib/todaysFocus";
+import Link from "next/link";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -28,6 +30,8 @@ export default function DashboardPage() {
   const [logWithPeriod, setLogWithPeriod] = useState(false);
   const [todayLogged, setTodayLogged] = useState(false);
   const [periodDismissed, setPeriodDismissed] = useState(false);
+  const [goalEditOpen, setGoalEditOpen] = useState(false);
+  const [goalNudgeDismissed, setGoalNudgeDismissed] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -77,6 +81,26 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-500 mt-0.5">Here&apos;s your cycle overview for today.</p>
             </div>
 
+            {/* Today's focus card */}
+            {status && (
+              <TodaysFocusCard
+                phase={status.currentPhase}
+                goals={profile?.goals ?? ["know_my_body"]}
+                dayOfCycle={status.dayOfCycle}
+                firstName={firstName}
+              />
+            )}
+
+            {/* Goal chips — or new-feature nudge for existing users with no goals */}
+            {profile && (profile.goals?.length > 0 ? (
+              <GoalChips goals={profile.goals} onEdit={() => setGoalEditOpen(true)} />
+            ) : !goalNudgeDismissed && (
+              <GoalNudge
+                onSetGoals={() => setGoalEditOpen(true)}
+                onDismiss={() => setGoalNudgeDismissed(true)}
+              />
+            ))}
+
             {/* ── Next period hero card ── */}
             {status && <NextPeriodCard status={status} />}
 
@@ -112,6 +136,11 @@ export default function DashboardPage() {
               <span className="text-gray-300 text-lg">→</span>
             </button>
 
+            {/* ── Fertile window card — only for Start a family goal ── */}
+            {status && profile?.goals?.includes("start_a_family") && (
+              <FertileWindowCard status={status} />
+            )}
+
             {/* ── Current phase card ── */}
             {status && <PhaseCard status={status} />}
 
@@ -119,11 +148,17 @@ export default function DashboardPage() {
             {status && status.dataPoints < 3 && (
               <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl p-4">
                 <span className="text-blue-400 text-lg shrink-0 mt-0.5">📅</span>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-blue-900">Add more dates for better predictions</p>
                   <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
                     You&apos;ve added {status.dataPoints} {status.dataPoints === 1 ? "month" : "months"} of data. 3 months gives the most accurate predictions.
                   </p>
+                  <Link
+                    href="/profile?edit=1"
+                    className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors"
+                  >
+                    Add dates in Profile →
+                  </Link>
                 </div>
               </div>
             )}
@@ -174,7 +209,215 @@ export default function DashboardPage() {
         onClose={() => { setLogOpen(false); setLogWithPeriod(false); }}
         onSave={() => { setLogOpen(false); setLogWithPeriod(false); loadData(); }}
       />
+
+      {user && goalEditOpen && (
+        <GoalEditModal
+          currentGoals={profile?.goals ?? ["know_my_body"]}
+          onClose={() => setGoalEditOpen(false)}
+          onSave={async (goals) => {
+            await updateDoc(doc(db, "users", user.uid), { "profile.goals": goals });
+            setGoalEditOpen(false);
+            loadData();
+          }}
+        />
+      )}
     </PleaseSignIn>
+  );
+}
+
+// ── Fertile window card ───────────────────────────────────────────────────────
+
+function FertileWindowCard({ status }: { status: CycleStatus }) {
+  const { ovulationDate, currentPhase } = status;
+  const today = new Date();
+  const fertileStart = addDays(ovulationDate, -4);
+  const fertileEnd = ovulationDate;
+  const isInWindow = !isBefore(today, fertileStart) && !isBefore(fertileEnd, today);
+  const daysToFertile = Math.ceil((fertileStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const isOvulationDay = currentPhase === "Ovulatory" && Math.abs(differenceInDays(today, ovulationDate)) <= 1;
+
+  let heading: string;
+  let body: string;
+  let accent: string;
+
+  if (isOvulationDay) {
+    heading = "🌱 Ovulation day";
+    body = "Today is your most fertile day. Your fertile window closes in the next 24 hours.";
+    accent = "from-green-400 to-emerald-500";
+  } else if (isInWindow || currentPhase === "Ovulatory") {
+    heading = "🌱 You're in your fertile window";
+    body = `Fertile window: ${format(fertileStart, "MMM d")} – ${format(fertileEnd, "MMM d")}. Ovulation around ${format(ovulationDate, "MMM d")}.`;
+    accent = "from-green-400 to-emerald-500";
+  } else if (daysToFertile > 0 && daysToFertile <= 7) {
+    heading = "🌱 Fertile window approaching";
+    body = `Your fertile window opens in ${daysToFertile} day${daysToFertile === 1 ? "" : "s"} — around ${format(fertileStart, "MMM d")}.`;
+    accent = "from-teal-400 to-green-400";
+  } else {
+    heading = "🌱 Next fertile window";
+    body = `Fertile window: ${format(fertileStart, "MMM d")} – ${format(fertileEnd, "MMM d")}. Ovulation around ${format(ovulationDate, "MMM d")}.`;
+    accent = "from-pink-300 to-purple-400";
+  }
+
+  return (
+    <div className={`bg-gradient-to-r ${accent} rounded-3xl p-5 text-white shadow-lg`}>
+      <p className="text-sm font-bold mb-1">{heading}</p>
+      <p className="text-xs text-white/80 leading-relaxed">{body}</p>
+    </div>
+  );
+}
+
+// ── Goal nudge — shown once per session for users with no goals set ───────────
+
+function GoalNudge({ onSetGoals, onDismiss }: { onSetGoals: () => void; onDismiss: () => void }) {
+  return (
+    <div className="flex items-start gap-3 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-2xl p-4">
+      <span className="text-xl shrink-0">✨</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900">New on Luna — set your goals</p>
+        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+          Tell us what you&apos;re working towards and we&apos;ll personalise everything for you.
+        </p>
+        <button
+          onClick={onSetGoals}
+          className="mt-2.5 px-4 py-1.5 rounded-lg bg-pink-500 text-white text-xs font-semibold hover:bg-pink-600 transition-colors"
+        >
+          Set my goals →
+        </button>
+      </div>
+      <button onClick={onDismiss} className="shrink-0 text-gray-300 hover:text-gray-400 text-xl leading-none transition-colors mt-0.5">
+        ×
+      </button>
+    </div>
+  );
+}
+
+// ── Goal chips + edit modal ───────────────────────────────────────────────────
+
+const GOALS = [
+  { id: "stay_on_top", emoji: "🌟", name: "Stay on top of my game" },
+  { id: "start_a_family", emoji: "🌱", name: "Start a family" },
+  { id: "train_smarter", emoji: "💪", name: "Train smarter" },
+  { id: "know_my_body", emoji: "🌿", name: "Know my body" },
+];
+
+function GoalChips({ goals, onEdit }: { goals: string[]; onEdit: () => void }) {
+  const active = GOALS.filter((g) => goals.includes(g.id));
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {active.map((g) => (
+        <span key={g.id} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-pink-50 border border-pink-200 text-xs font-semibold text-pink-700">
+          {g.emoji} {g.name}
+        </span>
+      ))}
+      <button
+        onClick={onEdit}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium text-gray-500 hover:bg-gray-200 transition-colors"
+      >
+        ✏️ Edit goals
+      </button>
+    </div>
+  );
+}
+
+function GoalEditModal({ currentGoals, onClose, onSave }: {
+  currentGoals: string[];
+  onClose: () => void;
+  onSave: (goals: string[]) => Promise<void>;
+}) {
+  const [selected, setSelected] = useState<string[]>(currentGoals);
+  const [showWarning, setShowWarning] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
+    );
+  };
+
+  const handleSave = () => {
+    const changed = JSON.stringify([...selected].sort()) !== JSON.stringify([...currentGoals].sort());
+    if (changed) { setShowWarning(true); return; }
+    onClose();
+  };
+
+  const confirmSave = async () => {
+    setSaving(true);
+    await onSave(selected.length > 0 ? selected : ["know_my_body"]);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 space-y-5">
+
+        {!showWarning ? (
+          <>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Update your goals</h2>
+              <p className="text-sm text-gray-500 mt-1">Pick up to 3. Luna adjusts your content to match.</p>
+            </div>
+            <div className="space-y-2.5">
+              {GOALS.map((goal) => {
+                const isSelected = selected.includes(goal.id);
+                return (
+                  <button
+                    key={goal.id}
+                    onClick={() => toggle(goal.id)}
+                    className={`w-full text-left px-4 py-3.5 rounded-2xl border-2 transition-all ${
+                      isSelected
+                        ? "border-pink-500 bg-pink-50"
+                        : "border-gray-200 bg-white hover:border-pink-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{goal.emoji}</span>
+                      <span className={`font-semibold text-sm flex-1 ${isSelected ? "text-pink-700" : "text-gray-800"}`}>
+                        {goal.name}
+                      </span>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isSelected ? "border-pink-500 bg-pink-500" : "border-gray-300"
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSave} className="flex-1 py-3 rounded-xl bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200">
+                Save
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center space-y-3 py-2">
+              <span className="text-4xl">⚠️</span>
+              <h2 className="text-lg font-bold text-gray-900">Heads up</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Changing your goals affects your report accuracy over time. Switching frequently makes it harder to spot patterns.
+              </p>
+              <p className="text-sm text-gray-500">Are you sure you want to update?</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowWarning(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                Go back
+              </button>
+              <button onClick={confirmSave} disabled={saving} className="flex-1 py-3 rounded-xl bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors shadow-lg shadow-pink-200 disabled:opacity-50">
+                {saving ? "Saving..." : "Yes, update"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -270,9 +513,17 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
 
   return (
     <div className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-3xl p-6 text-white shadow-xl shadow-pink-200">
-      <p className="text-xs font-semibold uppercase tracking-widest text-pink-100 mb-1">
-        Next Period Prediction
-      </p>
+      <div className="flex items-start justify-between mb-1">
+        <p className="text-xs font-semibold uppercase tracking-widest text-pink-100">
+          Next Period Prediction
+        </p>
+        <Link
+          href="/profile?edit=1"
+          className="text-xs font-semibold text-white/70 hover:text-white transition-colors"
+        >
+          Edit dates
+        </Link>
+      </div>
       <h3 className="text-3xl font-bold mb-0.5">
         {format(nextPeriodDate, "MMMM d, yyyy")}
       </h3>
@@ -287,6 +538,33 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
       <div className="flex justify-between text-xs text-pink-100 mt-1.5">
         <span>Day {dayOfCycle} of {cycleLength}</span>
         <span>{100 - progress}% through cycle</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Today's focus card ────────────────────────────────────────────────────────
+
+function TodaysFocusCard({
+  phase,
+  goals,
+  dayOfCycle,
+  firstName,
+}: {
+  phase: import("@/lib/predictionEngine").Phase;
+  goals: string[];
+  dayOfCycle: number;
+  firstName: string;
+}) {
+  const { emoji, text } = getTodaysFocus(phase, goals, dayOfCycle);
+  return (
+    <div className="bg-white rounded-3xl border border-pink-100 shadow-sm px-5 py-4">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Today&apos;s Focus</p>
+      <div className="flex items-start gap-3">
+        <span className="text-2xl shrink-0 mt-0.5">{emoji}</span>
+        <p className="text-sm text-gray-800 leading-relaxed">
+          <span className="font-semibold">{firstName}, </span>{text}
+        </p>
       </div>
     </div>
   );

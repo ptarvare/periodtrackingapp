@@ -16,6 +16,7 @@ export interface DailyRecommendation {
   lifestyle: string[];
   expertTip: string;
   pcosTip?: string;
+  goalTip?: string;
 }
 
 const expertTipPool: Record<Phase, string[]> = {
@@ -109,23 +110,140 @@ const expertTipPool: Record<Phase, string[]> = {
   ],
 };
 
+// Goal-specific expert tip pools — Priya speaks directly to the user's goal
+const goalExpertTipPool: Partial<Record<string, Partial<Record<Phase, string[]>>>> = {
+  start_a_family: {
+    Menstrual: [
+      "Your period is a fertility diagnostic. Heavy, very light, or irregular periods each tell a different story about your hormonal health. Consistent tracking over 3 cycles gives you and your doctor the clearest picture of what's actually happening.",
+      "Iron loss during menstruation directly impacts egg quality and reproductive health. Pairing iron sources with vitamin C — spinach with lemon, red meat with peppers — triples absorption. If you're trying to conceive, this isn't optional.",
+      "Omega-3s reduce the prostaglandins causing your cramps, but they also support the anti-inflammatory environment needed for implantation. Fish oil or algae-based DHA is one of the highest-ROI supplements for conception — start now if you haven't.",
+      "Your uterine lining is shedding and rebuilding this week. The quality of this rebuild is influenced by what you eat now — iron, folate, and B12 are the critical nutrients for healthy endometrial tissue development.",
+      "Period pain that is worsening or affecting your daily life is not normal — it may indicate endometriosis, which affects fertility in roughly 30–50% of cases. If this describes you, earlier investigation leads to better outcomes.",
+      "The follicle that will ovulate this cycle is being selected right now. What you eat and how much you sleep during your period influences its development. Rest and nourishment this week have a longer reach than most people realise.",
+      "Alcohol during menstruation increases the liver's estrogen clearance burden. For women trying to conceive, this is the lowest-return week for drinking — your body has more important work to do.",
+    ],
+    Follicular: [
+      "The follicle that will release your egg this month is developing right now. CoQ10 at 200–400mg supports mitochondrial function in developing follicles — egg quality improvement starts here, not at ovulation.",
+      "Estrogen rising in the follicular phase stimulates cervical mucus production. Noticing how your discharge changes — from dry to creamy to clear and stretchy — is free, accurate ovulation tracking that no app can replicate.",
+      "Folic acid prevents neural tube defects in the earliest weeks of pregnancy, often before a woman knows she's pregnant. 400–800mcg daily is the current recommendation. If you're trying to conceive and not taking this yet, start today.",
+      "Stress suppresses GnRH, the hormone that drives LH and FSH — the signals that trigger ovulation. Chronic high cortisol can delay or prevent ovulation entirely. Managing stress is not optional wellness advice — it is fertility advice.",
+      "Vitamin D deficiency is linked to PCOS, endometriosis, and reduced success rates across fertility treatments. If you haven't tested your levels recently, it's one of the most worthwhile tests to run. Most people in indoor jobs are deficient year-round.",
+      "Your fertile window is 5–6 days wide, closing at ovulation. Tracking LH strips, basal body temperature, and cervical mucus together gives the most accurate prediction — no single method catches every cycle correctly.",
+      "Antioxidants — vitamin C, vitamin E, CoQ10, selenium — protect egg quality from oxidative stress. The 3 months before conception matter as much as the conception window itself. What you're eating now is influencing the egg that will ovulate.",
+    ],
+    Ovulatory: [
+      "Your egg is viable for 12–24 hours after ovulation, but sperm can survive up to 5 days in fertile cervical mucus. The 2–3 days before ovulation are often more important than ovulation day itself — don't focus on a single day.",
+      "Ovulation strips detect the LH surge 24–36 hours before egg release. A positive test means the window is opening — sex that day and the day after gives the highest probability, but the day before is equally important.",
+      "Cervical mucus at peak fertility — clear, slippery, and stretchy like egg white — creates channels that guide sperm toward the egg. Staying well-hydrated supports this. Some antihistamines and decongestants dry cervical mucus and reduce fertility.",
+      "Mittelschmerz — the one-sided cramping at ovulation — is a reliable fertility sign for women who experience it. It's caused by follicle rupture or fluid irritating the peritoneum. Note which side it's on — it typically alternates each cycle.",
+      "After ovulation, the ruptured follicle becomes the corpus luteum, which produces progesterone. The quality of this structure — influenced by your follicular phase nutrition and sleep — determines whether you produce enough progesterone to support early pregnancy.",
+      "Both partners' lifestyle in the 90 days before conception affects embryo quality. Sperm take approximately 72 days to mature and are influenced by diet, sleep, and stress the entire time. Conception is a 3-month preparation, not a single-day event.",
+    ],
+    Luteal: [
+      "If conception occurred, the embryo is travelling toward the uterus right now. Implantation typically happens 6–10 days after ovulation. Progesterone is critical for this process — low luteal-phase progesterone is a common reason for early pregnancy loss.",
+      "Vitamin B6 supports progesterone production and reduces PMS symptoms. Women trying to conceive with short luteal phases or low progesterone often benefit from B6 at 50–100mg alongside chasteberry (vitex) — both have clinical evidence for luteal support.",
+      "Alcohol in the luteal phase — even before a confirmed pregnancy — carries risk if you're actively trying to conceive. Implantation and earliest cell division are the most sensitive periods to environmental factors.",
+      "Two-week-wait anxiety is real, but cortisol actively impairs progesterone function. High stress increases early pregnancy loss risk — not as a vague possibility, but through a specific hormonal mechanism. Protect this window deliberately.",
+      "Light spotting 6–10 days after ovulation can be implantation bleeding — lighter, shorter, and pinkish rather than red. It doesn't occur in all pregnancies, but if you're trying to conceive, it's worth noting rather than assuming your period has started.",
+      "The corpus luteum sustains early pregnancy until the placenta takes over at around 8–10 weeks. Its quality is determined by the follicular phase that built it. A well-nourished, low-stress follicular phase builds a more robust corpus luteum.",
+    ],
+  },
+
+  train_smarter: {
+    Menstrual: [
+      "Prostaglandins spike at period start and drive inflammation that slows muscle repair and reduces coordination. This isn't bad training — it's the wrong training. Mobility and light movement now set up better performance in the follicular phase than pushing through at reduced output.",
+      "Iron loss during heavy periods directly reduces oxygen-carrying capacity in the following weeks. Female athletes with heavy periods are often in a mild iron-deficiency state by cycle end without knowing it. Consistent iron-rich eating during menstruation is sport-specific recovery nutrition.",
+      "Pain tolerance is at its lowest during menstruation due to low estrogen and elevated prostaglandins. Perceived exertion will be higher for the same absolute effort. Train by feel this week, not by numbers — and expect those numbers to return strongly in the follicular phase.",
+      "Muscle protein synthesis is still active during menstruation — you haven't lost the ability to build muscle. But anabolic signals are weaker and inflammation is higher. Maintenance volume at lower intensity is the smart choice, not a complete rest week.",
+      "Running economy and VO2 max are measurably lower during menstruation. Endurance athletes notice this as a drop in pace at the same RPE. It is not fitness loss. It's cycle-related physiology that will fully reverse by day 7–8.",
+      "Your core temperature is lower during menstruation. Connective tissue takes longer to warm up and is less pliable until you've been moving for 10+ minutes. Add 5 minutes to your warm-up this week and reduce soft tissue injury risk during a phase where the reward for hard training is low.",
+    ],
+    Follicular: [
+      "Muscle protein synthesis peaks in the follicular phase when estrogen is high. The same training stimulus produces more adaptation than at any other phase. This is when you earn the gains you'll maintain through the rest of the cycle — don't squander this window.",
+      "Estrogen acts as a muscle protector by reducing exercise-induced muscle damage and accelerating repair. DOMS hits harder in the luteal phase than follicular after identical sessions. You can push harder now with less downside.",
+      "New motor patterns are learned faster when estrogen is elevated. If there's a lift you've been trying to improve — your snatch, squat depth, clean technique — schedule the skill work now. Neural adaptation happens more efficiently in this window.",
+      "Joint laxity increases with rising estrogen, which enhances range of motion and is great for squatting deeper and working through full range. It also increases injury risk without proper stability work. Activate your stabilisers before loading heavy.",
+      "Appetite suppression from rising estrogen is a performance trap. You're training harder and recovering faster, but potentially eating less than your body needs. If your strength is plateauing, the answer is almost always fuel — not more training.",
+      "Creatine monohydrate is the most evidence-backed supplement for female athletes: it increases power output, speeds recovery, and has emerging evidence for cognitive and bone health. 5g daily, taken consistently — the follicular phase is the best time to start.",
+      "Your pain threshold rises significantly in the follicular phase. This is the window for lactate threshold training, heavy compound work, and anything requiring tolerance of discomfort. Your nervous system can handle effort that would be counterproductive in the luteal phase.",
+    ],
+    Ovulatory: [
+      "VO2 max is measurably higher around ovulation — not just perceived, but actual aerobic capacity. This is the window for time trials, races, or any test you need accurate performance data from. Plan your benchmarks here.",
+      "Testosterone peaks alongside estrogen just before ovulation. This combination drives power, explosiveness, and rate of force development more than either hormone alone. Your 1RM attempts, sprint tests, and maximal efforts all belong in this window.",
+      "Recovery speed from hard training is fastest at ovulation. Estrogen modulates post-exercise inflammation and repair signals are strongest. You can train hard on consecutive days without the accumulated fatigue you'd experience in the luteal phase.",
+      "Female ACL injury rates are 2–8x higher than male rates, with the highest risk clustering around ovulation. High estrogen increases ligament laxity. Prioritise landing mechanics, single-leg stability, and hip activation before your heaviest sessions — the risk is real and well-documented.",
+      "Strength training at ovulation builds muscle most efficiently due to peak testosterone and growth hormone. The same programme done across all phases gets better results if the most demanding sessions fall here. Periodising to your cycle isn't a trend — it's applied physiology.",
+      "Glycogen storage and utilisation are most efficient around ovulation. Higher-carbohydrate fuelling before and after training works best now. Save lower-carb protocols for the luteal phase, when fat oxidation naturally increases.",
+    ],
+    Luteal: [
+      "Your core temperature is 0.2–0.5°C higher in the luteal phase due to progesterone. This impairs thermoregulation, increases perceived exertion, and makes endurance work feel harder at the same pace. Training by RPE is more accurate than chasing pace or HR targets this phase.",
+      "Progesterone stimulates breathing rate, so you'll feel more breathless at the same effort. VO2 max declines slightly and endurance performance drops. This is not a fitness setback — it reverses completely by day 3–4 of your next cycle.",
+      "Heavy HIIT spikes cortisol, which competes with progesterone for receptor binding. Women who maintain high-intensity training through the entire cycle tend to have measurably worse luteal symptoms — more PMS, worse sleep, higher anxiety. Reducing HIIT specifically is the most effective training adjustment.",
+      "Muscle protein breakdown exceeds anabolism in the luteal phase. Maintenance, not growth, is the realistic goal. This is why volume reduction makes sense: you are managing recovery capacity, not losing fitness.",
+      "Carbohydrate cravings in the luteal phase reflect your body's increased reliance on glucose as training fuel. Complex carbs before training and protein immediately after matter more this phase than any other. Don't skip pre-workout food because you're trying to eat less.",
+      "Deep sleep decreases in the luteal phase as progesterone peaks and then drops sharply. Poor recovery from sleep has a direct, measurable impact on strength output, reaction time, and training motivation. Prioritising sleep over an extra training session is the right call this week.",
+      "If you consistently feel terrible in late luteal — fatigue, low motivation, poor performance — this is a signal, not a mental block. Planned deload weeks aligned with the late luteal phase are the most impactful periodisation upgrade female athletes almost never make.",
+    ],
+  },
+
+  stay_on_top: {
+    Menstrual: [
+      "Rest during menstruation is strategic, not passive. Women who protect their energy this week consistently outperform in the follicular phase when cognitive output genuinely peaks. Treat this as a deliberate investment in next week's performance.",
+      "Your working memory may feel slower during menstruation — not because your brain is performing worse, but because pain and fatigue are consuming cognitive bandwidth. Removing unnecessary decisions and administrative load this week preserves capacity for what actually matters.",
+      "The clarity you may feel about problems during your period — what's not working, what needs to change — is real. Lower estrogen reduces social smoothing and people-pleasing, making honest internal assessment easier. Use this window for genuine review, not performance.",
+      "Chronobiology research shows that women's cortisol response to stress is higher during menstruation. Your stress tolerance is lower right now — not your capability. High-stakes decisions under pressure are best deferred to follicular if you have that option.",
+      "If you're a manager or in a leadership role, emotional attunement is actually heightened during your period — you read people and situations more accurately. Low energy doesn't mean low effectiveness. Different tools are available; know which ones to use.",
+      "Sleep quality during menstruation has a larger-than-normal impact on next-day cognitive performance. Protect it — earlier bedtime, cooler room, no screens. The cognitive cost of poor sleep compounds at this lower-energy baseline.",
+    ],
+    Follicular: [
+      "Dopamine sensitivity peaks in the follicular phase. Tasks that feel difficult or tedious at other times feel more manageable now — not because they've changed, but because your reward circuitry is more responsive. This is the week to tackle what you've been avoiding.",
+      "Verbal fluency genuinely increases with rising estrogen — it's not just confidence. Research documents more words per minute, better word retrieval, and higher persuasiveness in spoken communication. Schedule your presentations, negotiations, and important conversations here.",
+      "Divergent thinking — the ability to generate multiple solutions and make novel connections — peaks in the follicular phase. If you have a problem that needs fresh perspective, brainstorm it now. The luteal phase will be better for filtering and deciding from among those ideas.",
+      "Working memory capacity is higher when estrogen is elevated. You can hold more in active processing without writing it down. Use this for strategy development, learning, and the mental heavy lifting of your work.",
+      "Starting new projects, habits, and relationships in the follicular phase leverages your natural dopaminergic peak. Habit formation requires repeated motivation in the early stages — motivation is highest here. Don't launch what matters in the luteal phase.",
+      "The follicular phase is your best window for difficult negotiations, salary conversations, or any situation requiring assertiveness. High estrogen increases social confidence, reduces social anxiety, and enhances your ability to read and influence a room.",
+      "Your brain's error-detection and self-monitoring performance — the anterior cingulate cortex — is sharpest in the follicular phase. Proofreading, auditing, quality-checking, and reviewing important work for mistakes is done most accurately in this window.",
+    ],
+    Ovulatory: [
+      "Your peak performance window is 3–5 days and arrives every single cycle. Women who know it and plan around it operate at a measurably higher level than those who don't. Block your calendar now — protect this window for your most important work.",
+      "Communication efficiency peaks at ovulation. Research documents cleaner delivery, more persuasive framing, and more effective reading of the room. Your best presentations, board meetings, and key conversations belong here.",
+      "Testosterone and estrogen are simultaneously high at ovulation — a combination that only occurs in this window. It drives the confidence-assertiveness-verbal-fluency combination that makes this the highest-output period of your cycle. Treat it accordingly.",
+      "Decision-making changes at ovulation — you're more likely to take calculated risks and commit to a direction. If you've been waiting for the right moment to make a call you keep postponing, this is that window.",
+      "Emotional intelligence — reading facial expressions, detecting emotional tone, interpreting group dynamics — peaks at ovulation. High-stakes interpersonal situations, team dynamics issues, and anything requiring social acuity is best handled now.",
+    ],
+    Luteal: [
+      "The luteal phase rewards convergent thinking — evaluating, deciding, editing, and completing — rather than generating new ideas. Redirect energy toward finishing what's open. Completion is your most productive output this phase.",
+      "The inner critic amplifies in the luteal phase. Progesterone heightens threat detection and negative self-assessment. Your brain is not being objective — it is being cautious. Decisions made through this filter tend to be overly conservative. Recognise the pattern before acting on it.",
+      "Detail-oriented work is genuinely superior in the luteal phase. Proofreading, auditing, reviewing work for errors, and analytical deep-dives benefit from the tighter focus and reduced distractibility of a progesterone-dominant brain state.",
+      "Your stress threshold decreases in the late luteal phase — the same workload feels heavier. This is hormonal, not motivational. Reducing meeting load, delegating, and protecting uninterrupted focus time matters more this week than any other.",
+      "Planning for the next cycle is best done in the luteal phase. You have analytical clarity, reduced social urgency, and honest perspective on what worked. Use this time to review and restructure — not to perform.",
+      "If you consistently make decisions you later regret — taking on too much, committing under pressure — check where those decisions fall in your cycle. Luteal-phase decision fatigue is real, systematically underestimated, and entirely manageable once you see the pattern.",
+    ],
+  },
+};
+
+const GOAL_TIP_PRIORITY = ["start_a_family", "train_smarter", "stay_on_top"] as const;
+
 export function getRecommendations(
   status: CycleStatus,
   profile: any
 ): DailyRecommendation {
   const { currentPhase, dayOfCycle } = status;
-  const goals: string[] = profile?.goals ?? [];
+  const goals: string[] = profile?.goals ?? ["know_my_body"];
   const conditions: string[] = profile?.conditions ?? [];
   const hasPCOS = conditions.includes("PCOS") || conditions.includes("PCOD");
-  const wantsMusclGain = goals.includes("Muscle Gain");
-  const wantsFatLoss = goals.includes("Fat Loss");
 
   const recs = baseRecs(currentPhase);
-  const pool = expertTipPool[currentPhase];
-  recs.expertTip = pool[dayOfCycle % pool.length];
+
+  // Select expert tip pool: goal-specific if available, else general phase pool
+  const activeGoal = GOAL_TIP_PRIORITY.find((g) => goals.includes(g));
+  const pool =
+    (activeGoal && goalExpertTipPool[activeGoal]?.[currentPhase]) ??
+    expertTipPool[currentPhase];
+  recs.expertTip = pool[(dayOfCycle - 1) % pool.length];
 
   applyPCOS(recs, currentPhase, hasPCOS);
-  applyGoals(recs, currentPhase, wantsMusclGain, wantsFatLoss);
+  applyGoals(recs, currentPhase, goals);
 
   return recs;
 }
@@ -305,21 +423,57 @@ function applyPCOS(
 function applyGoals(
   recs: DailyRecommendation,
   phase: Phase,
-  wantsMuscle: boolean,
-  wantsFatLoss: boolean
+  goals: string[]
 ): void {
-  if (wantsMuscle) {
-    recs.dietNotes.push("Target 1.6–2g protein per kg bodyweight today");
-    if (phase === "Follicular" || phase === "Ovulatory") {
-      recs.workout.push("Focus on progressive overload — add weight or reps");
-      recs.supplements.push("Creatine monohydrate (5g/day) — muscle output and recovery");
+  const tips: string[] = [];
+
+  if (goals.includes("start_a_family")) {
+    recs.dietNotes.push("Focus on folate-rich foods — leafy greens, legumes, fortified grains — essential for conception and early fetal development");
+    recs.supplements.push(
+      "Prenatal multivitamin with folate (400–800 mcg) — start before conception*",
+      "CoQ10 (200–600 mg) — supports egg quality*"
+    );
+    if (phase === "Ovulatory") {
+      recs.lifestyle.push("Your fertile window is now — this is the most important phase if you're trying to conceive");
+      tips.push("🌱 You're in your fertile window. If you're trying to conceive, now is the time. Focus on rest, gentle movement, and nourishing foods.");
+    } else if (phase === "Follicular") {
+      tips.push("🌱 Your body is building up to ovulation — the most fertile time in your cycle. Keep up the folate-rich foods and stay well-rested.");
+    } else if (phase === "Luteal") {
+      tips.push("🌱 If conception occurred, implantation happens in this phase. Keep stress low, eat well, and avoid alcohol.");
+    } else {
+      tips.push("🌱 Your body is resetting this phase. Focus on iron-rich foods to replenish, and folate to prepare for your next fertile window.");
     }
+    recs.workoutAvoid.push("Avoid overtraining — excessive exercise can disrupt ovulation");
   }
 
-  if (wantsFatLoss) {
+  if (goals.includes("train_smarter")) {
     if (phase === "Follicular" || phase === "Ovulatory") {
-      recs.workout.push("Optional: 15-min fasted walk in the morning");
+      recs.workout.push("Progressive overload is most effective now — add weight or reps to your key lifts");
+      recs.supplements.push("Creatine monohydrate (5g/day) — muscle output and recovery*");
+      tips.push("💪 You're in your performance window. Push harder — your body recovers faster and adapts better right now.");
+    } else if (phase === "Luteal") {
+      tips.push("💪 Pull back on volume this phase — focus on technique and time under tension. Recovery matters more than new PRs right now.");
+    } else {
+      tips.push("💪 This is your recovery week. Light movement and mobility work will serve you better than hard training.");
     }
-    recs.dietNotes.push("Eat protein first at each meal to manage hunger");
+    recs.dietNotes.push("Target 1.6–2g protein per kg bodyweight to support training adaptation");
+  }
+
+  if (goals.includes("stay_on_top")) {
+    if (phase === "Follicular" || phase === "Ovulatory") {
+      recs.lifestyle.push("Schedule your hardest cognitive work — presentations, negotiations, creative projects — in this window");
+      tips.push("🌟 Your brain is firing on all cylinders. Block time for deep work, big decisions, and anything that needs your best thinking.");
+    } else if (phase === "Luteal") {
+      recs.lifestyle.push("Shift to detail-oriented work — editing, analysis, admin, and finishing tasks suit this phase better");
+      tips.push("🌟 Your energy is more inward this phase. Use it for deep focus, finishing things, and planning — not starting big new projects.");
+    } else {
+      recs.lifestyle.push("Protect your schedule — rest and recovery now means better performance next week");
+      tips.push("🌟 Rest is your productivity tool this week. The women who plan their recovery end up outperforming those who push through.");
+    }
+    recs.dietNotes.push("Prioritise complex carbs and healthy fats for sustained mental energy — avoid blood sugar crashes");
+  }
+
+  if (tips.length > 0) {
+    recs.goalTip = tips[0];
   }
 }

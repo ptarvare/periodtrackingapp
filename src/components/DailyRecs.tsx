@@ -34,7 +34,7 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
       {/* Header */}
       <div className="px-5 pt-5 pb-3">
         <h3 className="text-base font-bold text-gray-900">Today&apos;s Guide</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Personalised for your current phase</p>
+        <p className="text-xs text-gray-400 mt-0.5">Personalised for your phase and goals</p>
       </div>
 
       {/* Tab bar */}
@@ -159,6 +159,13 @@ export default function DailyRecs({ recs }: { recs: DailyRecommendation }) {
         <div className="mx-4 mb-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
           <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">💡 PCOS Tip</p>
           <p className="text-sm text-blue-800">{recs.pcosTip}</p>
+        </div>
+      )}
+
+      {/* Goal tip */}
+      {recs.goalTip && (
+        <div className="mx-4 mb-4 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border border-pink-100">
+          <p className="text-sm text-gray-800 leading-relaxed">{recs.goalTip}</p>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 # Luna — Product Requirements Document
 
-**Version:** 3.0  
-**Last Updated:** 2026-06-02  
+**Version:** 3.1  
+**Last Updated:** 2026-06-08  
 **Author:** Pooja Tarvare  
 
 ---
@@ -251,6 +251,118 @@ Phase ends: Phase-end report appears in Report tab
 
 ---
 
+---
+
+---
+
+# Phase 4 — Goal-Based Personalization (Next)
+
+**Goal:** Make every user feel like Luna was built for them specifically. The same app, the same structure — but what you see is entirely shaped by what you're trying to achieve.
+
+---
+
+## The 4 Goals
+
+| Emoji | Goal Name | One-line description |
+|---|---|---|
+| 🌟 | Stay on top of my game | Plan your life, work, and energy around your cycle |
+| 🌱 | Start a family | Track your fertile window and optimize for conception |
+| 💪 | Train smarter | Know when to push, when to recover, and how to fuel your body |
+| 🌿 | Know my body | Understand your cycle, manage symptoms, and feel more in control |
+
+---
+
+## Onboarding Improvements ✅ (Jun 8 2026)
+
+### Step Order Redesign (Onboarding D)
+- **New order:** Step 1 = Basic info → Step 2 = Goals → Step 3 = Cycle dates
+- Goals come before dates: fun and personal (emotional buy-in before the friction-heavy step)
+- Step 3 heading references the user's selected goal: *"To personalise your train smarter plan, we need to know where you are in your cycle."*
+
+### Relative Date Picker (Onboarding A)
+- Step 3 (cycle dates) now uses one-tap chip picker instead of a calendar input
+- Chips: Today / Yesterday / 2 days ago / 3 days ago / 5 days ago / 1 week ago / 2 weeks ago / 3 weeks ago / 4 weeks ago / 5 weeks ago / 6 weeks ago / Pick a date →
+- Slots 2 and 3 show a smart suggestion first: *"✓ About May 11 — does that sound right?"* (calculated from previous slot − avg cycle length) — typically 1 tap
+- Fine-tune ‹ › buttons to adjust ±1 day after picking any chip
+- Calendar fallback ("Pick a date →") still available
+
+### One Date Unlocks Dashboard (Onboarding B)
+- 1 date is enough to proceed — Next/Submit button enabled after slot 1 is filled
+- Slots 2 and 3 are optional and labelled accordingly
+- Data quality banner is always green and encouraging (never amber/warning):
+  - 1 date: *"You're all set — add 2 more dates to improve accuracy."*
+  - 2 dates: *"Almost there — one more date makes predictions even better."*
+  - 3 dates: *"3 periods added — predictions will be accurate."*
+- avgCycleLength auto-calculated and shown as a stat when 2+ dates entered; manual input hidden
+
+### Goal Selection (onboarding step, now Step 2)
+- User selects any number of goals (multi-select chip UI, all 4 allowed)
+- If skipped: defaults to **"Know my body"**
+- Saved to Firestore: `profile.goals: string[]`
+
+---
+
+## Goal Chips — Dashboard + Report
+
+- Goals shown as small chips at the very top of Dashboard and Report pages
+- Edit icon (pencil) next to chips → opens goal selector modal
+- On edit: show popup warning — *"Changing your goals affects your report accuracy over time — be mindful of switching frequently"*
+- User can update and save; new goals take effect immediately
+
+---
+
+## Today's Focus Card ✅ (Jun 8 2026)
+
+A single-sentence card at the top of the dashboard (below greeting, above goal chips) that tells the user what to prioritise today.
+
+- **Goal-aware:** content is selected based on the user's highest-priority goal (priority: start_a_family > train_smarter > stay_on_top > know_my_body)
+- **Phase-aware:** 4 phases × 4 goals = 16 content buckets, each with 3 rotating messages
+- **Rotates daily:** message selected by `(dayOfCycle - 1) % 3` — predictable and non-random
+- **Name-personalised:** card opens with the user's first name in bold: *"Pooja, your energy is building..."*
+- Content lives in `src/lib/todaysFocus.ts`
+
+Examples:
+- Follicular + stay_on_top: *"Estrogen is rising and with it, your verbal fluency. Schedule your most demanding work, pitch, or hard conversation this week."*
+- Ovulatory + start_a_family: *"This is your most fertile window. Today and the next 2 days are your highest-probability opportunity."*
+- Luteal + train_smarter: *"Endurance over intensity today. A longer, steadier run will feel better and be more productive than trying to lift heavy."*
+
+---
+
+## How Goals Filter Content
+
+Everything is a filter — no new pages or new structure. Same tabs, same layout. What changes is the content inside each section.
+
+| Section | Stay on top | Start a family | Train smarter | Know my body |
+|---|---|---|---|---|
+| Fertile window card on dashboard | ✗ | ✓ | ✗ | ✗ |
+| Performance / energy framing | ✓ | ✗ | ✓ | ✗ |
+| Training recs (exercise tab) | ✗ | ✗ | ✓ | ✗ |
+| Symptom patterns in report | ✗ | ✗ | ✗ | ✓ |
+| Fertility-focused food recs | ✗ | ✓ | ✗ | ✗ |
+| Energy heatmap in report | ✓ | ✗ | ✓ | ✓ |
+| Ovulation day highlighted | ✗ | ✓ | ✗ | ✗ |
+
+---
+
+## How Each Goal Changes the Content Tone
+
+The core offering is always **food + exercise**. Goals change how that content is framed and what it emphasizes — not the structure of the app.
+
+| Goal | Food recs | Exercise recs | Insights |
+|---|---|---|---|
+| 🌱 Start a family | Fertility nutrition — folate, iron, healthy fats, foods that support conception | What supports conception vs what to ease off; gentle movement during ovulation | Ovulation timing, hormonal support, fertile window science |
+| 💪 Train smarter | Fueling and recovery by phase — protein timing, carb needs | When to lift heavy, when to deload, phase-based periodization | Strength peaks, recovery windows, performance patterns |
+| 🌟 Stay on top of my game | Energy and focus foods — complex carbs, brain foods, avoiding crashes | When your brain peaks, when to schedule hard tasks vs creative work | Cognitive windows, energy patterns, best days for deep work |
+| 🌿 Know my body | General wellness baseline — balanced, practical, no extremes | Moderate, phase-appropriate movement | Cycle education, pattern recognition, symptom science |
+
+---
+
+## Log Tab — No Change
+
+The Log tab is **identical for all users regardless of goal.** No goal-specific log fields (no cervical mucus, no workout intensity). Users don't need that complexity. Personalization lives entirely in what Luna shows them — not what they're asked to track.
+
+---
+
 ## Key Decisions Log
 
 | Decision | Why |
@@ -267,3 +379,13 @@ Phase ends: Phase-end report appears in Report tab
 | PRD updated before every build | Alignment first, code second |
 | GitHub committed after every feature | Nothing left hanging |
 | Phase 1 / Phase 2 / Phase 3 structure | Shows progression clearly; each phase has a focused goal |
+| Goals = content filter, not new pages | Same structure for everyone; goals change what content appears, not where |
+| Log tab same for all goals | Cervical mucus / workout intensity fields removed — users don't know the terminology; personalization lives in content shown, not data collected |
+| Goals shown as chips on Dashboard + Report | Goals determine what the page shows — chips make that visible and editable in context |
+| Warning on goal edit | Changing goals too often degrades report accuracy — users should be mindful |
+| Goals before dates in onboarding | Emotional buy-in (fun, personal) before friction (hard step); selected goal also contextualises why dates are needed |
+| 1 date unlocks dashboard | 3 dates = pressure = drop-off; 1 date = enough to show phase; app nudges for more inside the experience |
+| Relative chip picker, not calendar | Users know "about 2 weeks ago", not "May 20"; one tap beats calendar navigation on mobile |
+| Smart suggestion for slots 2 and 3 | Pre-calculates expected previous period (slot1 date − cycle length); usually 1 tap for user |
+| Today's focus rotates by dayOfCycle not random | Predictable rotation means consistent experience; doesn't feel broken if same message appears two days |
+| Today's focus goal priority order | start_a_family is most time-sensitive (fertility windows); train_smarter next; stay_on_top; know_my_body default |

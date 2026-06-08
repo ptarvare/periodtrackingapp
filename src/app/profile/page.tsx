@@ -2,11 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, parseISO } from "date-fns";
 import PleaseSignIn from "@/components/PleaseSignIn";
 import Nav from "@/components/Nav";
+
+const DATE_CHIPS = [
+  { label: "Today", days: 0 },
+  { label: "Yesterday", days: 1 },
+  { label: "2 days ago", days: 2 },
+  { label: "3 days ago", days: 3 },
+  { label: "5 days ago", days: 5 },
+  { label: "1 week ago", days: 7 },
+  { label: "2 weeks ago", days: 14 },
+  { label: "3 weeks ago", days: 21 },
+  { label: "4 weeks ago", days: 28 },
+  { label: "5 weeks ago", days: 35 },
+  { label: "6 weeks ago", days: 42 },
+];
+
+function daysAgoToDate(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+}
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -43,6 +63,10 @@ export default function ProfilePage() {
         console.error(e);
       } finally {
         setLoading(false);
+        // Auto-enter edit mode if navigated here with ?edit=1
+        if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("edit") === "1") {
+          setEditing(true);
+        }
       }
     })();
   }, [user]);
@@ -53,24 +77,27 @@ export default function ProfilePage() {
     setDateInput("");
   };
 
+  const addSpecificDate = (dateStr: string) => {
+    if (!dateStr || periodDates.includes(dateStr)) return;
+    setPeriodDates((prev) => [...prev, dateStr].sort());
+  };
+
   const removeDate = (d: string) => setPeriodDates((prev) => prev.filter((x) => x !== d));
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     try {
-      await setDoc(doc(db, "users", user.uid), {
-        profile: {
-          name, age, weight, height,
-          email: user.email,
-          periodDates,
-          periodDuration: String(periodDuration),
-          avgCycleLength,
-          conditions: [],
-          goals: [],
-        },
-        onboardingCompleted: true,
-        createdAt: new Date().toISOString(),
+      // Use updateDoc with field paths to preserve goals, conditions, and other profile fields
+      await updateDoc(doc(db, "users", user.uid), {
+        "profile.name": name,
+        "profile.email": user.email,
+        "profile.age": age,
+        "profile.weight": weight,
+        "profile.height": height,
+        "profile.periodDates": periodDates,
+        "profile.periodDuration": String(periodDuration),
+        "profile.avgCycleLength": avgCycleLength,
       });
       setEditing(false);
     } catch (e) {
@@ -104,7 +131,7 @@ export default function ProfilePage() {
             height={height} setHeight={setHeight}
             periodDates={periodDates}
             dateInput={dateInput} setDateInput={setDateInput}
-            addDate={addDate} removeDate={removeDate}
+            addDate={addDate} addSpecificDate={addSpecificDate} removeDate={removeDate}
             periodDuration={periodDuration} setPeriodDuration={setPeriodDuration}
             avgCycleLength={avgCycleLength} setAvgCycleLength={setAvgCycleLength}
             saving={saving}
@@ -239,7 +266,7 @@ function ViewProfile({
 
 function EditView({
   name, setName, age, setAge, weight, setWeight, height, setHeight,
-  periodDates, dateInput, setDateInput, addDate, removeDate,
+  periodDates, dateInput, setDateInput, addDate, addSpecificDate, removeDate,
   periodDuration, setPeriodDuration, avgCycleLength, setAvgCycleLength,
   saving, onSave, onCancel,
 }: any) {
@@ -290,16 +317,53 @@ function EditView({
 
       {/* Period dates */}
       <div className="bg-white rounded-3xl border border-pink-100 shadow-sm p-5 space-y-3">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Period Start Dates</h2>
-        <p className="text-xs text-gray-400">Add the first day of each past period. More dates = more accurate predictions.</p>
-        <div className="flex gap-2">
-          <input type="date" value={dateInput} onChange={(e) => setDateInput(e.target.value)}
-            max={new Date().toISOString().split("T")[0]} className={`${inputCls} flex-1`} />
-          <button onClick={addDate} disabled={!dateInput}
-            className="px-5 py-3 rounded-xl bg-pink-500 text-white text-sm font-medium hover:bg-pink-600 disabled:opacity-40 transition-colors">
-            Add
-          </button>
+        <div>
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Period Start Dates</h2>
+          <p className="text-xs text-gray-400 mt-1">Tap when your last period started — or use the picker for an exact date.</p>
         </div>
+
+        {/* Chip picker */}
+        {!dateInput ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {DATE_CHIPS.map((chip) => (
+                <button
+                  key={chip.label}
+                  onClick={() => addSpecificDate(daysAgoToDate(chip.days))}
+                  className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 hover:border-pink-400 hover:bg-pink-50 transition-all"
+                >
+                  {chip.label}
+                </button>
+              ))}
+              <button
+                onClick={() => setDateInput(" ")}
+                className="px-3 py-2 rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-500 hover:border-gray-400 transition-all"
+              >
+                Pick a date →
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input type="date" value={dateInput.trim()} onChange={(e) => setDateInput(e.target.value)}
+              max={new Date().toISOString().split("T")[0]} className={`${inputCls} flex-1`} autoFocus />
+            <button
+              onClick={() => {
+                addDate();
+                setDateInput("");
+              }}
+              disabled={!dateInput.trim()}
+              className="px-5 py-3 rounded-xl bg-pink-500 text-white text-sm font-medium hover:bg-pink-600 disabled:opacity-40 transition-colors"
+            >
+              Add
+            </button>
+            <button onClick={() => setDateInput("")} className="px-3 py-3 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition-colors">
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Added dates list */}
         {[...periodDates].sort().reverse().map((d) => (
           <div key={d} className="flex items-center justify-between px-4 py-2.5 bg-pink-50 border border-pink-100 rounded-xl">
             <div className="flex items-center gap-2">
