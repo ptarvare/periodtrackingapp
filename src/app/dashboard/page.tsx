@@ -19,15 +19,7 @@ import { getTodaysFocus } from "@/lib/todaysFocus";
 const DATE_CHIPS = [
   { label: "Today", days: 0 },
   { label: "Yesterday", days: 1 },
-  { label: "2 days ago", days: 2 },
-  { label: "3 days ago", days: 3 },
-  { label: "5 days ago", days: 5 },
   { label: "1 week ago", days: 7 },
-  { label: "2 weeks ago", days: 14 },
-  { label: "3 weeks ago", days: 21 },
-  { label: "4 weeks ago", days: 28 },
-  { label: "5 weeks ago", days: 35 },
-  { label: "6 weeks ago", days: 42 },
 ];
 
 const TODAY = new Date().toISOString().split("T")[0];
@@ -77,6 +69,12 @@ export default function DashboardPage() {
   }, [user, router]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") loadData(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [loadData]);
 
   const firstName = profile?.name?.split(" ")[0] ?? user?.displayName?.split(" ")[0] ?? "there";
 
@@ -604,10 +602,7 @@ function AddPeriodDateModal({
     }
   };
 
-  const handleDone = () => {
-    if (added.length > 0) onSaved();
-    else onClose();
-  };
+  const handleDone = () => onSaved();
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">

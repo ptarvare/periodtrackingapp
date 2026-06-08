@@ -39,15 +39,7 @@ const GOALS = [
 const DATE_CHIPS = [
     { label: "Today", days: 0 },
     { label: "Yesterday", days: 1 },
-    { label: "2 days ago", days: 2 },
-    { label: "3 days ago", days: 3 },
-    { label: "5 days ago", days: 5 },
     { label: "1 week ago", days: 7 },
-    { label: "2 weeks ago", days: 14 },
-    { label: "3 weeks ago", days: 21 },
-    { label: "4 weeks ago", days: 28 },
-    { label: "5 weeks ago", days: 35 },
-    { label: "6 weeks ago", days: 42 },
 ];
 
 const SLOT_LABELS = [
