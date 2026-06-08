@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { calculateCycleStatus, CycleStatus } from "@/lib/predictionEngine";
 import { getRecommendations, DailyRecommendation } from "@/lib/recommendationEngine";
@@ -15,7 +15,20 @@ import DailyRecs from "@/components/DailyRecs";
 import LogModal from "@/components/LogModal";
 import Nav from "@/components/Nav";
 import { getTodaysFocus } from "@/lib/todaysFocus";
-import Link from "next/link";
+
+const DATE_CHIPS = [
+  { label: "Today", days: 0 },
+  { label: "Yesterday", days: 1 },
+  { label: "2 days ago", days: 2 },
+  { label: "3 days ago", days: 3 },
+  { label: "5 days ago", days: 5 },
+  { label: "1 week ago", days: 7 },
+  { label: "2 weeks ago", days: 14 },
+  { label: "3 weeks ago", days: 21 },
+  { label: "4 weeks ago", days: 28 },
+  { label: "5 weeks ago", days: 35 },
+  { label: "6 weeks ago", days: 42 },
+];
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -32,6 +45,7 @@ export default function DashboardPage() {
   const [periodDismissed, setPeriodDismissed] = useState(false);
   const [goalEditOpen, setGoalEditOpen] = useState(false);
   const [goalNudgeDismissed, setGoalNudgeDismissed] = useState(false);
+  const [addDateOpen, setAddDateOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -102,7 +116,7 @@ export default function DashboardPage() {
             ))}
 
             {/* ── Next period hero card ── */}
-            {status && <NextPeriodCard status={status} />}
+            {status && <NextPeriodCard status={status} onEditDates={() => setAddDateOpen(true)} />}
 
             {/* ── Subtle period nudge — only when predicted today or 1 day late ── */}
             {status?.periodConfirmationNeeded && status.daysLate <= 1 && !periodDismissed && (
@@ -146,21 +160,19 @@ export default function DashboardPage() {
 
             {/* Low data nudge */}
             {status && status.dataPoints < 3 && (
-              <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl p-4">
+              <button
+                onClick={() => setAddDateOpen(true)}
+                className="w-full flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl p-4 hover:bg-blue-100 transition-colors text-left"
+              >
                 <span className="text-blue-400 text-lg shrink-0 mt-0.5">📅</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-blue-900">Add more dates for better predictions</p>
                   <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
-                    You&apos;ve added {status.dataPoints} {status.dataPoints === 1 ? "month" : "months"} of data. 3 months gives the most accurate predictions.
+                    You&apos;ve added {status.dataPoints} {status.dataPoints === 1 ? "month" : "months"} of data. Tap to add more — takes 5 seconds.
                   </p>
-                  <Link
-                    href="/profile?edit=1"
-                    className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors"
-                  >
-                    Add dates in Profile →
-                  </Link>
                 </div>
-              </div>
+                <span className="text-blue-400 text-lg shrink-0 mt-0.5">→</span>
+              </button>
             )}
 
             {/* Recommendations */}
@@ -219,6 +231,15 @@ export default function DashboardPage() {
             setGoalEditOpen(false);
             loadData();
           }}
+        />
+      )}
+
+      {user && addDateOpen && (
+        <AddPeriodDateModal
+          currentDates={profile?.periodDates ?? []}
+          userId={user.uid}
+          onClose={() => setAddDateOpen(false)}
+          onSaved={() => { setAddDateOpen(false); loadData(); }}
         />
       )}
     </PleaseSignIn>
@@ -496,7 +517,7 @@ function PeriodNudge({ daysLate, onLog, onDismiss }: {
 
 // ── Next period hero card ─────────────────────────────────────────────────────
 
-function NextPeriodCard({ status }: { status: CycleStatus }) {
+function NextPeriodCard({ status, onEditDates }: { status: CycleStatus; onEditDates: () => void }) {
   const { nextPeriodDate, daysUntilNextPeriod, periodConfirmationNeeded, daysLate, cycleLength, dayOfCycle } = status;
   const progress = Math.min(100, Math.round((dayOfCycle / cycleLength) * 100));
 
@@ -517,12 +538,12 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
         <p className="text-xs font-semibold uppercase tracking-widest text-pink-100">
           Next Period Prediction
         </p>
-        <Link
-          href="/profile?edit=1"
+        <button
+          onClick={onEditDates}
           className="text-xs font-semibold text-white/70 hover:text-white transition-colors"
         >
           Edit dates
-        </Link>
+        </button>
       </div>
       <h3 className="text-3xl font-bold mb-0.5">
         {format(nextPeriodDate, "MMMM d, yyyy")}
@@ -538,6 +559,140 @@ function NextPeriodCard({ status }: { status: CycleStatus }) {
       <div className="flex justify-between text-xs text-pink-100 mt-1.5">
         <span>Day {dayOfCycle} of {cycleLength}</span>
         <span>{100 - progress}% through cycle</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Add period date modal ─────────────────────────────────────────────────────
+
+function AddPeriodDateModal({
+  currentDates,
+  userId,
+  onClose,
+  onSaved,
+}: {
+  currentDates: string[];
+  userId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [added, setAdded] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarInput, setCalendarInput] = useState("");
+
+  const daysAgoToDate = (n: number): string => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().split("T")[0];
+  };
+
+  const saveDate = async (dateStr: string) => {
+    if (!dateStr || currentDates.includes(dateStr) || added.includes(dateStr)) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "users", userId), {
+        "profile.periodDates": arrayUnion(dateStr),
+        "profile.lastPeriodStart": dateStr,
+      });
+      setAdded((prev) => [...prev, dateStr]);
+    } catch (e) {
+      console.error("AddPeriodDate error", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDone = () => {
+    if (added.length > 0) onSaved();
+    else onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Add a period date</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Tap when your period started</p>
+          </div>
+          <button
+            onClick={handleDone}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+
+        {!showCalendar ? (
+          <div className="flex flex-wrap gap-2">
+            {DATE_CHIPS.map((chip) => {
+              const dateStr = daysAgoToDate(chip.days);
+              const isAlready = currentDates.includes(dateStr) || added.includes(dateStr);
+              return (
+                <button
+                  key={chip.label}
+                  onClick={() => saveDate(dateStr)}
+                  disabled={saving || isAlready}
+                  className={`px-3 py-2 rounded-xl border text-sm transition-all ${
+                    isAlready
+                      ? "bg-green-50 border-green-300 text-green-700 font-semibold"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-pink-400 hover:bg-pink-50"
+                  } disabled:cursor-default`}
+                >
+                  {isAlready ? `✓ ${chip.label}` : chip.label}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setShowCalendar(true)}
+              className="px-3 py-2 rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-500 hover:border-gray-400 transition-all"
+            >
+              Pick a date →
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={calendarInput}
+              onChange={(e) => setCalendarInput(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 outline-none text-sm"
+              autoFocus
+            />
+            <button
+              onClick={() => { saveDate(calendarInput); setCalendarInput(""); setShowCalendar(false); }}
+              disabled={!calendarInput || saving}
+              className="px-4 py-3 rounded-xl bg-pink-500 text-white text-sm font-medium hover:bg-pink-600 disabled:opacity-40 transition-colors"
+            >
+              Add
+            </button>
+            <button
+              onClick={() => setShowCalendar(false)}
+              className="px-3 py-3 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {added.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
+            <span>✓</span>
+            <span>
+              {added.length === 1 ? "1 date added" : `${added.length} dates added`} — predictions will update
+            </span>
+          </div>
+        )}
+
+        <button
+          onClick={handleDone}
+          className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
+        >
+          Done
+        </button>
       </div>
     </div>
   );
