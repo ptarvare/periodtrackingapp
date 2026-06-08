@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# product strategy (keep local only)
+*.prd.md
+luna-prd.md
+po-prd.md
+prd.md
+prd.txt
+trainer-questionnaire.md
