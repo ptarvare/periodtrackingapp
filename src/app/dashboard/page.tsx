@@ -577,32 +577,45 @@ function AddPeriodDateModal({
 }) {
   const [added, setAdded] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarInput, setCalendarInput] = useState("");
 
+  // Use local date components to avoid UTC timezone offset issues (critical for India UTC+5:30)
   const daysAgoToDate = (n: number): string => {
     const d = new Date();
     d.setDate(d.getDate() - n);
-    return d.toISOString().split("T")[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const saveDate = async (dateStr: string) => {
-    if (!dateStr || currentDates.includes(dateStr) || added.includes(dateStr)) return;
+    if (!dateStr) return;
+    if (currentDates.includes(dateStr) || added.includes(dateStr)) {
+      // Date already saved — show confirmation rather than silently skipping
+      setError(null);
+      return;
+    }
     setSaving(true);
+    setError(null);
     try {
       await updateDoc(doc(db, "users", userId), {
         "profile.periodDates": arrayUnion(dateStr),
         "profile.lastPeriodStart": dateStr,
       });
       setAdded((prev) => [...prev, dateStr]);
-    } catch (e) {
+    } catch (e: any) {
       console.error("AddPeriodDate error", e);
+      setError("Could not save — check your connection and try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDone = () => onSaved();
+  const allSaved = [...currentDates, ...added];
+  const recentSaved = [...allSaved].sort().reverse().slice(0, 3);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
@@ -610,10 +623,10 @@ function AddPeriodDateModal({
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Add a period date</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Tap when your period started</p>
+            <p className="text-sm text-gray-500 mt-0.5">When did your last period start?</p>
           </div>
           <button
-            onClick={handleDone}
+            onClick={onSaved}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors shrink-0"
           >
             ✕
@@ -624,17 +637,17 @@ function AddPeriodDateModal({
           <div className="flex flex-wrap gap-2">
             {DATE_CHIPS.map((chip) => {
               const dateStr = daysAgoToDate(chip.days);
-              const isAlready = currentDates.includes(dateStr) || added.includes(dateStr);
+              const isAlready = allSaved.includes(dateStr);
               return (
                 <button
                   key={chip.label}
                   onClick={() => saveDate(dateStr)}
-                  disabled={saving || isAlready}
-                  className={`px-3 py-2 rounded-xl border text-sm transition-all ${
+                  disabled={saving}
+                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                     isAlready
-                      ? "bg-green-50 border-green-300 text-green-700 font-semibold"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-pink-400 hover:bg-pink-50"
-                  } disabled:cursor-default`}
+                      ? "bg-green-50 border-green-300 text-green-700"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-pink-400 hover:bg-pink-50 active:scale-95"
+                  }`}
                 >
                   {isAlready ? `✓ ${chip.label}` : chip.label}
                 </button>
@@ -642,7 +655,7 @@ function AddPeriodDateModal({
             })}
             <button
               onClick={() => setShowCalendar(true)}
-              className="px-3 py-2 rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-500 hover:border-gray-400 transition-all"
+              className="px-4 py-2.5 rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-500 hover:border-pink-300 transition-all"
             >
               Pick a date →
             </button>
@@ -653,7 +666,7 @@ function AddPeriodDateModal({
               type="date"
               value={calendarInput}
               onChange={(e) => setCalendarInput(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
+              max={daysAgoToDate(0)}
               className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200 outline-none text-sm"
               autoFocus
             />
@@ -673,20 +686,38 @@ function AddPeriodDateModal({
           </div>
         )}
 
+        {error && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+            <span>⚠️</span><span>{error}</span>
+          </div>
+        )}
+
         {added.length > 0 && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
             <span>✓</span>
-            <span>
-              {added.length === 1 ? "1 date added" : `${added.length} dates added`} — predictions will update
-            </span>
+            <span>{added.length === 1 ? "1 date saved" : `${added.length} dates saved`} — tap Done to update predictions</span>
+          </div>
+        )}
+
+        {recentSaved.length > 0 && (
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-xs text-gray-400 font-medium mb-2">Already saved</p>
+            <div className="space-y-1">
+              {recentSaved.map((d) => (
+                <p key={d} className="text-xs text-gray-500">
+                  🩸 {format(parseISO(d), "MMMM d, yyyy")}
+                </p>
+              ))}
+            </div>
           </div>
         )}
 
         <button
-          onClick={handleDone}
-          className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
+          onClick={onSaved}
+          disabled={saving}
+          className="w-full py-3 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
-          Done
+          {saving ? "Saving..." : "Done"}
         </button>
       </div>
     </div>
