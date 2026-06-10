@@ -74,63 +74,88 @@ export default function PriyaVoiceChat() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
-  const sendMessage = useCallback(
-    async (text: string) => {
-      if (!text.trim() || loading) return;
-      const userMsg: Message = { role: "user", text: text.trim() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setLoading(true);
-      try {
-        const res = await fetch("/api/priya", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text.trim(),
-            history: messages.slice(-8),
-            context,
-          }),
-        });
-        const data = await res.json();
-        setMessages((prev) => [
-          ...prev,
-          { role: "priya", text: data.text ?? "Sorry, try again." },
-        ]);
-      } catch {
-        setMessages((prev) => [
-          ...prev,
-          { role: "priya", text: "Something went wrong — please try again." },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [loading, messages, context]
-  );
+  // Use a ref so the recognition onresult callback always sees the latest values
+  const contextRef = useRef(context);
+  useEffect(() => { contextRef.current = context; }, [context]);
 
-  const startListening = useCallback(() => {
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  const loadingRef = useRef(loading);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || loadingRef.current) return;
+    const userMsg: Message = { role: "user", text: text.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+    loadingRef.current = true;
+    try {
+      const res = await fetch("/api/priya", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text.trim(),
+          history: messagesRef.current.slice(-8),
+          context: contextRef.current,
+        }),
+      });
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        { role: "priya", text: data.text ?? "Sorry, try again." },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "priya", text: "Something went wrong — please try again." },
+      ]);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (listening) {
+      // Cancel — stop without sending
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+      setListening(false);
+      return;
+    }
+
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SR) return;
+
     const recognition = new SR();
     recognition.lang = "en-IN";
     recognition.interimResults = false;
     recognition.continuous = false;
+
     recognition.onresult = (e: SpeechRecognitionEvent) => {
       const transcript = e.results[0][0].transcript;
-      setInput(transcript);
-      sendMessage(transcript);
+      if (transcript.trim()) {
+        setInput(transcript);
+        sendMessage(transcript);
+      }
     };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
+
+    recognition.onerror = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+
     recognitionRef.current = recognition;
     recognition.start();
     setListening(true);
-  }, [sendMessage]);
-
-  const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
-    setListening(false);
-  }, []);
+  }, [listening, sendMessage]);
 
   return (
     <>
@@ -180,7 +205,7 @@ export default function PriyaVoiceChat() {
                   <p className="text-gray-600 text-sm font-medium">Hi{context.name ? `, ${context.name}` : ""}!</p>
                   <p className="text-gray-400 text-xs mt-1">
                     Ask me anything about training, nutrition, or your cycle.
-                    {hasSpeech && " Tap the mic to speak."}
+                    {hasSpeech && " Tap the mic, speak, then wait."}
                   </p>
                 </div>
               )}
@@ -217,11 +242,8 @@ export default function PriyaVoiceChat() {
             <div className="px-3 py-2 border-t border-gray-100 bg-white flex items-center gap-2">
               {hasSpeech && (
                 <button
-                  onMouseDown={startListening}
-                  onMouseUp={stopListening}
-                  onTouchStart={startListening}
-                  onTouchEnd={stopListening}
-                  aria-label="Hold to speak"
+                  onClick={toggleListening}
+                  aria-label={listening ? "Stop listening" : "Tap to speak"}
                   className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                     listening
                       ? "bg-red-500 text-white animate-pulse"
